@@ -41,7 +41,7 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 
 	private static final float MIN_RANGE = 50.0f; // discard everything below that
 
-	private static final float MAX_RANGE = 400.0f; // discard everything above that
+	private static final float MAX_RANGE = 300.0f; // discard everything above that
 
 	private static ConcurrentMap<String, ReceiverBeacon> activeReceiversCache = new ConcurrentHashMap<>();
 	private static ConcurrentMap<String, AtomicInteger> dailyRecCounters = new ConcurrentHashMap<>();
