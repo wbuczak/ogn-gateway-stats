@@ -13,9 +13,9 @@ public interface StatsDAO {
 
 	Map<String, Object> getRangeRecord(long date, String receiverName);
 
-	List<Map<String, Object>> getTopRangeRecords(int numRecords);
+	List<Map<String, Object>> getTopRangeRecords(int limit);
 
-	List<Map<String, Object>> getTopRangeRecords(long date, int numRecords);
+	List<Map<String, Object>> getTopRangeRecords(long date, int limit);
 
 	void insertActiveReceiversCount(long date, int count);
 

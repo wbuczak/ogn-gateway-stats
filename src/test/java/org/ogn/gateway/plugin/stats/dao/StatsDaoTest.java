@@ -125,7 +125,7 @@ public class StatsDaoTest {
 		assertEquals(4, records.size());
 
 		Map<String, Object> r1 = records.get(0);
-		assertEquals(100, r1.get("count"));
+		assertEquals(99, r1.get("count"));
 	}
 
 	@Test
@@ -170,5 +170,9 @@ public class StatsDaoTest {
 
 		assertEquals(100, dao.getReceiverReceptionCount(date, "TestRec1"));
 		assertEquals(150, dao.getReceiverReceptionCount(date, "TestRec2"));
+
+		assertEquals(1, dao.getTopCountRecords(1).size());
+		assertEquals(2, dao.getTopCountRecords(0).size());
 	}
+
 }

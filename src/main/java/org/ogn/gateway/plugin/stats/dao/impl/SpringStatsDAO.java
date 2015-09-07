@@ -110,11 +110,19 @@ public class SpringStatsDAO implements StatsDAO {
 	}
 
 	@Override
-	public List<Map<String, Object>> getTopRangeRecords(int numRecords) {
-		// String sql = "select * from OGN_MAX_RANGE order by range desc limit ?";
+	public List<Map<String, Object>> getTopRangeRecords(int limit) {
 
-		String sql = "select date, receiver_name, max(range) as range, timestamp, aircraft_id, aircraft_reg, alt "
-				+ "from OGN_MAX_RANGE_V group by receiver_name order by range desc limit ?";
+		Object[] args = null;
+		StringBuilder sql = new StringBuilder(
+				"select date, receiver_name, max(range) as range, timestamp, aircraft_id, aircraft_reg, alt "
+						+ "from OGN_MAX_RANGE_V group by receiver_name order by range desc");
+
+		if (limit == 0) {
+			args = new Object[0];
+		} else {
+			sql.append(" limit ?");
+			args = new Object[] { limit };
+		}
 
 		RowMapper<Map<String, Object>> mapper = new RowMapper<Map<String, Object>>() {
 
@@ -132,13 +140,21 @@ public class SpringStatsDAO implements StatsDAO {
 			}
 		};
 
-		return jdbcTemplate.query(sql, mapper, new Object[] { numRecords });
+		return jdbcTemplate.query(sql.toString(), mapper, args);
 	}
 
 	@Override
-	public List<Map<String, Object>> getTopRangeRecords(long date, int numRecords) {
+	public List<Map<String, Object>> getTopRangeRecords(long date, int limit) {
 
-		String sql = "select * from OGN_MAX_RANGE where date=? order by range desc limit ?";
+		Object[] args = null;
+		StringBuilder sql = new StringBuilder("select * from OGN_MAX_RANGE where date=? order by range desc");
+
+		if (limit == 0) {
+			args = new Object[] { date };
+		} else {
+			sql.append(" limit ?");
+			args = new Object[] { date, limit };
+		}
 
 		RowMapper<Map<String, Object>> mapper = new RowMapper<Map<String, Object>>() {
 
@@ -155,12 +171,21 @@ public class SpringStatsDAO implements StatsDAO {
 			}
 		};
 
-		return jdbcTemplate.query(sql, mapper, new Object[] { date, numRecords });
+		return jdbcTemplate.query(sql.toString(), mapper, args);
 	}
 
 	@Override
 	public List<Map<String, Object>> getActiveReceiversCount(int days) {
-		String sql = "select * from OGN_STATS order by date limit ?";
+
+		Object[] args = null;
+		StringBuilder sql = new StringBuilder("select * from OGN_STATS order by date desc");
+
+		if (days == 0) {
+			args = new Object[0];
+		} else {
+			sql.append(" limit ?");
+			args = new Object[] { days };
+		}
 
 		RowMapper<Map<String, Object>> mapper = new RowMapper<Map<String, Object>>() {
 
@@ -174,7 +199,7 @@ public class SpringStatsDAO implements StatsDAO {
 			}
 		};
 
-		return jdbcTemplate.query(sql, mapper, new Object[] { days });
+		return jdbcTemplate.query(sql.toString(), mapper, args);
 	}
 
 	@Override
@@ -206,7 +231,15 @@ public class SpringStatsDAO implements StatsDAO {
 
 	@Override
 	public List<Map<String, Object>> getTopCountRecords(int limit) {
-		String sql = "select * from OGN_RECEIVER_V order by beacons_received desc limit ?";
+
+		Object[] args = null;
+		StringBuilder sql = new StringBuilder("select * from OGN_RECEIVER_V order by beacons_received desc");
+		if (limit == 0) {
+			args = new Object[0];
+		} else {
+			sql.append(" limit ?");
+			args = new Object[] { limit };
+		}
 
 		RowMapper<Map<String, Object>> mapper = new RowMapper<Map<String, Object>>() {
 
@@ -220,12 +253,21 @@ public class SpringStatsDAO implements StatsDAO {
 			}
 		};
 
-		return jdbcTemplate.query(sql, mapper, new Object[] { limit });
+		return jdbcTemplate.query(sql.toString(), mapper, args);
 	}
 
 	@Override
 	public List<Map<String, Object>> getTopCountRecords(long date, int limit) {
-		String sql = "select * from OGN_RECEIVER where date=? order by beacons_received desc limit ?";
+
+		Object[] args = null;
+		StringBuilder sql = new StringBuilder("select * from OGN_RECEIVER where date=? order by beacons_received desc");
+
+		if (limit == 0) {
+			args = new Object[] { date };
+		} else {
+			sql.append(" limit ?");
+			args = new Object[] { date, limit };
+		}
 
 		RowMapper<Map<String, Object>> mapper = new RowMapper<Map<String, Object>>() {
 
@@ -239,7 +281,7 @@ public class SpringStatsDAO implements StatsDAO {
 			}
 		};
 
-		return jdbcTemplate.query(sql, mapper, new Object[] { date, limit });
+		return jdbcTemplate.query(sql.toString(), mapper, args);
 	}
 
 }
