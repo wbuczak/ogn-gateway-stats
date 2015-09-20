@@ -284,4 +284,59 @@ public class SpringStatsDAO implements StatsDAO {
 		return jdbcTemplate.query(sql.toString(), mapper, args);
 	}
 
+	@Override
+	public float getReceiverMaxAlt(long date, String receiverName) {
+		final String sql = "select max_alt from OGN_RECEIVER where date=? and receiver_name=?";
+
+		Float result = Float.NaN;
+		try {
+			result = jdbcTemplate.queryForObject(sql, Float.class, date, receiverName);
+		} catch (EmptyResultDataAccessException ex) {
+			// still null ;-)
+			result = Float.NaN;
+		}
+
+		return result;
+	}
+
+	@Override
+	public List<Map<String, Object>> getTopAltRecords(long date, int limit) {
+		Object[] args = null;
+		StringBuilder sql = new StringBuilder(
+				"select receiver_name,max_alt from OGN_RECEIVER where date=? order by max_alt desc");
+
+		if (limit == 0) {
+			args = new Object[] { date };
+		} else {
+			sql.append(" limit ?");
+			args = new Object[] { date, limit };
+		}
+
+		RowMapper<Map<String, Object>> mapper = new RowMapper<Map<String, Object>>() {
+
+			@Override
+			public Map<String, Object> mapRow(ResultSet rs, int arg1) throws SQLException {
+
+				Map<String, Object> rec = new HashMap<>();
+				rec.put("receiver_name", rs.getString("receiver_name"));
+				rec.put("max_alt", rs.getFloat("max_alt"));
+				return rec;
+			}
+		};
+
+		return jdbcTemplate.query(sql.toString(), mapper, args);
+	}
+
+	@Override
+	public void insertReceiverMaxAlt(long date, String receiverName, float alt) {
+		final String sql = "insert into OGN_RECEIVER(date, receiver_name, max_alt) values(?,?,?)";
+		jdbcTemplate.update(sql, date, receiverName, alt);
+	}
+
+	@Override
+	public void updateReceiverMaxAlt(long date, String receiverName, float alt) {
+		final String sql = "update OGN_RECEIVER set max_alt=? where date=? and receiver_name=?";
+		jdbcTemplate.update(sql, alt, date, receiverName);
+	}
+
 }

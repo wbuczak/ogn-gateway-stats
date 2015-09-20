@@ -119,4 +119,34 @@ public class StatsServiceTest {
 		assertEquals(120, dao.getReceiverReceptionCount(date, "Rec3"));
 	}
 
+	@Test
+	@DirtiesContext
+	public void test4() {
+		Calendar calendar = new GregorianCalendar(TimeZone.getTimeZone("GMT"));
+		calendar.set(Calendar.YEAR, 2015);
+		calendar.set(Calendar.MONTH, 7);
+		calendar.set(Calendar.DAY_OF_MONTH, 18);
+		calendar.set(Calendar.HOUR_OF_DAY, 16);
+		calendar.set(Calendar.MINUTE, 40);
+		calendar.set(Calendar.SECOND, 15);
+
+		long timestamp = calendar.getTimeInMillis();
+		long date = removeTime(timestamp);
+
+		Map<String, Float> alts = new HashMap<String, Float>();
+		alts.put("Rec1", 2050.0f);
+		alts.put("Rec2", 3234.5f);
+		alts.put("Rec3", 560.0f);
+		alts.put("Rec4", 1200f);
+
+		service.insertOrUpdateReceivedBeaconsMaxAlt(date, alts);
+
+		alts.put("Rec2", 3100f);
+
+		service.insertOrUpdateReceivedBeaconsMaxAlt(date, alts);
+
+		// still the previous (greater) alt should be returned
+		assertEquals(3234.5f, dao.getReceiverMaxAlt(date, "Rec2"), 1e-10);
+	}
+
 }

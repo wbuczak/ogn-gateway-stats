@@ -175,4 +175,33 @@ public class StatsDaoTest {
 		assertEquals(2, dao.getTopCountRecords(0).size());
 	}
 
+	@Test
+	@DirtiesContext
+	public void test8() throws Exception {
+
+		long timestamp = calendar.getTimeInMillis();
+
+		long date = TimeDateUtils.removeTime(timestamp);
+
+		assertEquals(Float.NaN, dao.getReceiverMaxAlt(date, "TestRec1"), 1e-10);
+
+		dao.insertReceiverMaxAlt(date, "TestRec1", 2500);
+		dao.insertReceiverMaxAlt(date, "TestRec2", 4500.5f);
+
+		assertEquals(2500f, dao.getReceiverMaxAlt(date, "TestRec1"), 1e-10);
+		assertEquals(4500.5f, dao.getReceiverMaxAlt(date, "TestRec2"), 1e-10);
+
+		dao.updateReceiverMaxAlt(date, "TestRec1", 2538);
+		dao.updateReceiverMaxAlt(date, "TestRec2", 4520.0f);
+
+		assertEquals(2538f, dao.getReceiverMaxAlt(date, "TestRec1"), 1e-10);
+		assertEquals(4520.0f, dao.getReceiverMaxAlt(date, "TestRec2"), 1e-10);
+
+		List<Map<String, Object>> topAlts = dao.getTopAltRecords(date, 1);
+		assertEquals(1, topAlts.size());
+		assertEquals("TestRec2", topAlts.get(0).get("receiver_name"));
+		assertEquals(4520f, topAlts.get(0).get("max_alt"));
+
+	}
+
 }

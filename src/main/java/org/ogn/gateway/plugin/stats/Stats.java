@@ -45,6 +45,7 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 
 	private static ConcurrentMap<String, ReceiverBeacon> activeReceiversCache = new ConcurrentHashMap<>();
 	private static ConcurrentMap<String, AtomicInteger> dailyRecCounters = new ConcurrentHashMap<>();
+	private static ConcurrentMap<String, Float> dailyAltCache = new ConcurrentHashMap<>();
 
 	private static StatsService service;
 
@@ -70,11 +71,23 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 			return dailyRecCounters;
 		}
 
-		// clean the daily beacons counters (1 sec after midnight)
+		@ManagedAttribute
+		public long getAlitudesCacheSize() {
+			return dailyAltCache.size();
+		}
+
+		@ManagedAttribute
+		public Map<String, Float> getDailyAltCache() {
+			return dailyAltCache;
+		}
+
+		// clean the daily caches (1 sec after midnight)
 		@Scheduled(cron = "1 0 0 * * ?")
-		public void cleanReceivedBeaconsCounters() {
+		public void cleanDailyCaches() {
 			LOG.info("cleaning daily receiver reception counters");
 			dailyRecCounters.clear();
+			LOG.info("cleaning daily altitudes cache");
+			dailyAltCache.clear();
 		}
 	}
 
@@ -118,9 +131,12 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 
 							long date = TimeDateUtils.removeTime(System.currentTimeMillis());
 
-							LOG.debug("current activeReceiversCache size: {}",activeReceiversCache.size());
+							LOG.debug("current activeReceiversCache size: {}", activeReceiversCache.size());
 							service.insertOrUpdateActiveReceiversCount(date, activeReceiversCache.size());
+							LOG.debug("current daily receiver counter's cache size: {}", activeReceiversCache.size());
 							service.insertOrUpdateReceivedBeaconsCounters(date, dailyRecCounters);
+							LOG.debug("current daily receiver max-alt cache size: {}", activeReceiversCache.size());
+							service.insertOrUpdateReceivedBeaconsMaxAlt(date, dailyAltCache);
 
 							// clear activeReceivers cache
 							activeReceiversCache.clear();
@@ -148,6 +164,11 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 			dailyRecCounters.put(beacon.getReceiverName(), new AtomicInteger(1));
 		else
 			dailyRecCounters.get(beacon.getReceiverName()).incrementAndGet();
+
+		if (!dailyAltCache.containsKey(beacon.getReceiverName()))
+			dailyAltCache.put(beacon.getReceiverName(), beacon.getAlt());
+		else if (dailyAltCache.get(beacon.getReceiverName()) < beacon.getAlt())
+			dailyAltCache.put(beacon.getReceiverName(), beacon.getAlt());
 
 		// if the receiver is already in the cache..
 		if (activeReceiversCache.containsKey(beacon.getReceiverName())) {

@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS OGN_RECEIVER(
 	date INTEGER NOT NULL,
 	receiver_name VARCHAR(9) NOT NULL,
 	beacons_received INTEGER DEFAULT 0,
+	max_alt DECIMAL(5,1),
 	PRIMARY KEY (date,receiver_name)
 );
 
@@ -37,5 +38,5 @@ AS SELECT
 FROM OGN_MAX_RANGE;	
 
 CREATE VIEW IF NOT EXISTS OGN_RECEIVER_V 
-AS SELECT date(date/1000,'unixepoch','localtime') as date, receiver_name, beacons_received 
+AS SELECT date(date/1000,'unixepoch','localtime') as date, receiver_name, beacons_received, max_alt
 FROM OGN_RECEIVER;

@@ -34,4 +34,12 @@ public interface StatsDAO {
 	List<Map<String, Object>> getTopCountRecords(int limit);
 
 	List<Map<String, Object>> getTopCountRecords(long date, int limit);
+
+	void insertReceiverMaxAlt(long date, String receierName, float alt);
+
+	void updateReceiverMaxAlt(long date, String receiverName, float alt);
+
+	float getReceiverMaxAlt(long date, String receierName);
+
+	List<Map<String, Object>> getTopAltRecords(long date, int limit);
 }

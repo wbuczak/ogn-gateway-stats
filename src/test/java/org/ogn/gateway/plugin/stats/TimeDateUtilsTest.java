@@ -38,19 +38,19 @@ public class TimeDateUtilsTest {
 
 		assertEquals(t2, t4);
 	}
-	
+
 	@Test
 	public void test2() {
 		long date = TimeDateUtils.fromString("2015-08-06");
-		
-		DateFormat df = DateFormat.getDateTimeInstance();		
+
+		DateFormat df = DateFormat.getDateTimeInstance();
 		df.setTimeZone(TimeZone.getTimeZone("UTC"));
-		
+
 		System.out.println(df.format(new Date(date)));
-		
+
 		long date2 = TimeDateUtils.removeTime(date);
-		
-		assertEquals(date2,date);		
+
+		assertEquals(date2, date);
 	}
-	
+
 }

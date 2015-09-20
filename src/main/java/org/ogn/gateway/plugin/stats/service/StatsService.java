@@ -9,6 +9,8 @@ public interface StatsService {
 			String aircraftReg, float aircraftAlt);
 
 	void insertOrUpdateActiveReceiversCount(long date, int count);
-	
+
 	void insertOrUpdateReceivedBeaconsCounters(long date, Map<String, AtomicInteger> counters);
+
+	void insertOrUpdateReceivedBeaconsMaxAlt(long date, Map<String, Float> alts);
 }
