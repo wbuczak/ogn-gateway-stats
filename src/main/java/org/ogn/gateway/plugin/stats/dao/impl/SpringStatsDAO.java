@@ -288,15 +288,14 @@ public class SpringStatsDAO implements StatsDAO {
 	public float getReceiverMaxAlt(long date, String receiverName) {
 		final String sql = "select max_alt from OGN_RECEIVER where date=? and receiver_name=?";
 
-		Float result = Float.NaN;
+		Float result = null;
 		try {
 			result = jdbcTemplate.queryForObject(sql, Float.class, date, receiverName);
 		} catch (EmptyResultDataAccessException ex) {
-			// still null ;-)
-			result = Float.NaN;
+			// nothing to be done here
 		}
 
-		return result;
+		return result == null ? Float.NaN : result;
 	}
 
 	@Override
@@ -325,6 +324,12 @@ public class SpringStatsDAO implements StatsDAO {
 		};
 
 		return jdbcTemplate.query(sql.toString(), mapper, args);
+	}
+
+	@Override
+	public boolean isReceiverRegistered(long date, String receiverName) {
+		return jdbcTemplate.queryForObject("select count(1) from OGN_RECEIVER where date=? and receiver_name=?",
+				Integer.class, date, receiverName) > 0;
 	}
 
 	@Override

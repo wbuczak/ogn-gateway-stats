@@ -1,7 +1,9 @@
 package org.ogn.gateway.plugin.stats.dao;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.util.Calendar;
@@ -183,10 +185,14 @@ public class StatsDaoTest {
 
 		long date = TimeDateUtils.removeTime(timestamp);
 
+		assertFalse(dao.isReceiverRegistered(date, "TestRec1"));
+
 		assertEquals(Float.NaN, dao.getReceiverMaxAlt(date, "TestRec1"), 1e-10);
 
 		dao.insertReceiverMaxAlt(date, "TestRec1", 2500);
 		dao.insertReceiverMaxAlt(date, "TestRec2", 4500.5f);
+
+		assertTrue(dao.isReceiverRegistered(date, "TestRec1"));
 
 		assertEquals(2500f, dao.getReceiverMaxAlt(date, "TestRec1"), 1e-10);
 		assertEquals(4500.5f, dao.getReceiverMaxAlt(date, "TestRec2"), 1e-10);
@@ -201,7 +207,6 @@ public class StatsDaoTest {
 		assertEquals(1, topAlts.size());
 		assertEquals("TestRec2", topAlts.get(0).get("receiver_name"));
 		assertEquals(4520f, topAlts.get(0).get("max_alt"));
-
 	}
 
 }

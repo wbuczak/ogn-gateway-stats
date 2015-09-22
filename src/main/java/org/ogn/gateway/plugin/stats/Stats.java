@@ -133,9 +133,9 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 
 							LOG.debug("current activeReceiversCache size: {}", activeReceiversCache.size());
 							service.insertOrUpdateActiveReceiversCount(date, activeReceiversCache.size());
-							LOG.debug("current daily receiver counter's cache size: {}", activeReceiversCache.size());
+							LOG.debug("current daily receiver counter's cache size: {}", dailyRecCounters.size());
 							service.insertOrUpdateReceivedBeaconsCounters(date, dailyRecCounters);
-							LOG.debug("current daily receiver max-alt cache size: {}", activeReceiversCache.size());
+							LOG.debug("current daily receiver max-alt cache size: {}", dailyAltCache.size());
 							service.insertOrUpdateReceivedBeaconsMaxAlt(date, dailyAltCache);
 
 							// clear activeReceivers cache

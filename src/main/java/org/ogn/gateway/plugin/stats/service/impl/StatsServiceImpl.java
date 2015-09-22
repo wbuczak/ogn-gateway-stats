@@ -71,12 +71,14 @@ public class StatsServiceImpl implements StatsService {
 	@Transactional
 	public void insertOrUpdateReceivedBeaconsMaxAlt(long date, Map<String, Float> alts) {
 		for (Entry<String, Float> e : alts.entrySet()) {
-			float alt = dao.getReceiverMaxAlt(date, e.getKey());
-			if (Float.isNaN(alt)) {
+
+			if (!dao.isReceiverRegistered(date, e.getKey()))
 				dao.insertReceiverMaxAlt(date, e.getKey(), e.getValue());
-			} else if (alt < e.getValue()) {// update only if new value is > (prevents faulty updates when
-											// restarting the gateway)
-				dao.updateReceiverMaxAlt(date, e.getKey(), e.getValue());
+			else {
+				float alt = dao.getReceiverMaxAlt(date, e.getKey());
+				if (Float.isNaN(alt) || alt < e.getValue()) {
+					dao.updateReceiverMaxAlt(date, e.getKey(), e.getValue());
+				}
 			}
 		}
 	}

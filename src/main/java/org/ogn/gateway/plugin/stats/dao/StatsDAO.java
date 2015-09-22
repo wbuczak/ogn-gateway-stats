@@ -42,4 +42,6 @@ public interface StatsDAO {
 	float getReceiverMaxAlt(long date, String receierName);
 
 	List<Map<String, Object>> getTopAltRecords(long date, int limit);
+
+	boolean isReceiverRegistered(long date, String key);
 }
