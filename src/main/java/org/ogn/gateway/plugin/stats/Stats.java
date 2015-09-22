@@ -103,7 +103,7 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 
 	@Override
 	public String getDescription() {
-		return "collects and stores statistics based on receivers and aircraft beacons";
+		return "collects and stores statistics based on receiver and aircraft beacons";
 	}
 
 	@Override

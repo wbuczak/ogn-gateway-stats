@@ -302,7 +302,7 @@ public class SpringStatsDAO implements StatsDAO {
 	public List<Map<String, Object>> getTopAltRecords(long date, int limit) {
 		Object[] args = null;
 		StringBuilder sql = new StringBuilder(
-				"select receiver_name,max_alt from OGN_RECEIVER where date=? order by max_alt desc");
+				"select receiver_name,max_alt from OGN_RECEIVER where date=? and max_alt is not null order by max_alt desc");
 
 		if (limit == 0) {
 			args = new Object[] { date };
