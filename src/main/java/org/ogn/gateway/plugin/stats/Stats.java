@@ -5,6 +5,7 @@ t * Copyright (c) 2015 OGN, All Rights Reserved.
 package org.ogn.gateway.plugin.stats;
 
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executors;
@@ -12,6 +13,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.ogn.commons.beacon.AircraftBeacon;
 import org.ogn.commons.beacon.AircraftDescriptor;
@@ -45,7 +48,7 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 
 	private static ConcurrentMap<String, ReceiverBeacon> activeReceiversCache = new ConcurrentHashMap<>();
 	private static ConcurrentMap<String, AtomicInteger> dailyRecCounters = new ConcurrentHashMap<>();
-	private static ConcurrentMap<String, Float> dailyAltCache = new ConcurrentHashMap<>();
+	private static ConcurrentMap<String, Object[]> dailyAltCache = new ConcurrentHashMap<>();
 
 	private static StatsService service;
 
@@ -56,6 +59,10 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 
 	private static Future<?> receiversCountFuture;
 	private static ScheduledExecutorService scheduler;
+
+	private final ReentrantReadWriteLock fLock = new ReentrantReadWriteLock();
+	private final Lock fReadLock = fLock.readLock();
+	private final Lock fWriteLock = fLock.writeLock();
 
 	@Service
 	@ManagedResource(objectName = "org.ogn.gateway.plugin.stats:name=Stats", description = "OGN gateway statistics collector plugin")
@@ -77,7 +84,7 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 		}
 
 		@ManagedAttribute
-		public Map<String, Float> getDailyAltCache() {
+		public Map<String, Object[]> getDailyAltCache() {
 			return dailyAltCache;
 		}
 
@@ -136,7 +143,15 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 							LOG.debug("current daily receiver counter's cache size: {}", dailyRecCounters.size());
 							service.insertOrUpdateReceivedBeaconsCounters(date, dailyRecCounters);
 							LOG.debug("current daily receiver max-alt cache size: {}", dailyAltCache.size());
-							service.insertOrUpdateReceivedBeaconsMaxAlt(date, dailyAltCache);
+
+							for (Entry<String, Object[]> entry : dailyAltCache.entrySet()) {
+								fReadLock.lock();
+								Object[] maxAltAircraft = entry.getValue();
+								service.insertOrUpdateReceivedBeaconsMaxAlt(date, entry.getKey(),
+										(String) maxAltAircraft[0], (String) maxAltAircraft[1],
+										(float) maxAltAircraft[2]);
+								fReadLock.unlock();
+							}
 
 							// clear activeReceivers cache
 							activeReceiversCache.clear();
@@ -165,10 +180,22 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 		else
 			dailyRecCounters.get(beacon.getReceiverName()).incrementAndGet();
 
-		if (!dailyAltCache.containsKey(beacon.getReceiverName()))
-			dailyAltCache.put(beacon.getReceiverName(), beacon.getAlt());
-		else if (dailyAltCache.get(beacon.getReceiverName()) < beacon.getAlt())
-			dailyAltCache.put(beacon.getReceiverName(), beacon.getAlt());
+		if (!dailyAltCache.containsKey(beacon.getReceiverName())) {
+			Object[] maxAltAircraft = new Object[3];
+			maxAltAircraft[0] = beacon.getId();
+			maxAltAircraft[1] = descriptor.getRegNumber();
+			maxAltAircraft[2] = beacon.getAlt();
+			fWriteLock.lock();
+			dailyAltCache.put(beacon.getReceiverName(), maxAltAircraft);
+			fWriteLock.unlock();
+		} else {
+			Object[] maxAltAircraft = dailyAltCache.get(beacon.getReceiverName());
+			if ((float) maxAltAircraft[2] < beacon.getAlt()) {
+				fWriteLock.lock();
+				maxAltAircraft[2] = beacon.getAlt();
+				fWriteLock.unlock();
+			}
+		}
 
 		// if the receiver is already in the cache..
 		if (activeReceiversCache.containsKey(beacon.getReceiverName())) {

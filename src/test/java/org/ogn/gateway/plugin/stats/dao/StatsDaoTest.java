@@ -189,16 +189,16 @@ public class StatsDaoTest {
 
 		assertEquals(Float.NaN, dao.getReceiverMaxAlt(date, "TestRec1"), 1e-10);
 
-		dao.insertReceiverMaxAlt(date, "TestRec1", 2500);
-		dao.insertReceiverMaxAlt(date, "TestRec2", 4500.5f);
+		dao.insertReceiverMaxAlt(timestamp, "TestRec1", "343430", null, 2500);
+		dao.insertReceiverMaxAlt(timestamp + 30, "TestRec2", "544334", "A-BCD", 4500.5f);
 
 		assertTrue(dao.isReceiverRegistered(date, "TestRec1"));
 
 		assertEquals(2500f, dao.getReceiverMaxAlt(date, "TestRec1"), 1e-10);
 		assertEquals(4500.5f, dao.getReceiverMaxAlt(date, "TestRec2"), 1e-10);
 
-		dao.updateReceiverMaxAlt(date, "TestRec1", 2538);
-		dao.updateReceiverMaxAlt(date, "TestRec2", 4520.0f);
+		dao.updateReceiverMaxAlt(timestamp + 100, "TestRec1", "343430", null, 2538);
+		dao.updateReceiverMaxAlt(timestamp + 130, "TestRec2", "544334", "A-BCD", 4520.0f);
 
 		assertEquals(2538f, dao.getReceiverMaxAlt(date, "TestRec1"), 1e-10);
 		assertEquals(4520.0f, dao.getReceiverMaxAlt(date, "TestRec2"), 1e-10);
@@ -207,6 +207,9 @@ public class StatsDaoTest {
 		assertEquals(1, topAlts.size());
 		assertEquals("TestRec2", topAlts.get(0).get("receiver_name"));
 		assertEquals(4520f, topAlts.get(0).get("max_alt"));
+		assertEquals("A-BCD", topAlts.get(0).get("max_alt_aircraft_reg"));
+		assertEquals(timestamp + 130, (long) topAlts.get(0).get("max_alt_timestamp"));
+
 	}
 
 }
