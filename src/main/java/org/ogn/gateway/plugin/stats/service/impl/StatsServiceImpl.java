@@ -69,17 +69,16 @@ public class StatsServiceImpl implements StatsService {
 
 	@Override
 	@Transactional
-	public void insertOrUpdateReceivedBeaconsMaxAlt(long date, Map<String, Float> alts) {
-		for (Entry<String, Float> e : alts.entrySet()) {
-
-			if (!dao.isReceiverRegistered(date, e.getKey()))
-				dao.insertReceiverMaxAlt(date, e.getKey(), e.getValue());
-			else {
-				float alt = dao.getReceiverMaxAlt(date, e.getKey());
-				if (Float.isNaN(alt) || alt < e.getValue()) {
-					dao.updateReceiverMaxAlt(date, e.getKey(), e.getValue());
-				}
+	public void insertOrUpdateReceivedBeaconsMaxAlt(long date, String receiverName, String aircraftId,
+			String aircraftReg, float aircraftAlt) {
+		if (!dao.isReceiverRegistered(date, receiverName))
+			dao.insertReceiverMaxAlt(date, receiverName, aircraftId, aircraftReg, aircraftAlt);
+		else {
+			float alt = dao.getReceiverMaxAlt(date, receiverName);
+			if (Float.isNaN(alt) || alt < aircraftAlt) {
+				dao.updateReceiverMaxAlt(date, receiverName, aircraftId, aircraftReg, aircraftAlt);
 			}
 		}
 	}
+
 }

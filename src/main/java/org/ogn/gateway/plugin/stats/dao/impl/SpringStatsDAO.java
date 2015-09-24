@@ -302,7 +302,7 @@ public class SpringStatsDAO implements StatsDAO {
 	public List<Map<String, Object>> getTopAltRecords(long date, int limit) {
 		Object[] args = null;
 		StringBuilder sql = new StringBuilder(
-				"select receiver_name,max_alt from OGN_RECEIVER where date=? and max_alt is not null order by max_alt desc");
+				"select receiver_name,max_alt, max_alt_aircraft_id, max_alt_aircraft_reg from OGN_RECEIVER where date=? and max_alt is not null order by max_alt desc");
 
 		if (limit == 0) {
 			args = new Object[] { date };
@@ -319,6 +319,8 @@ public class SpringStatsDAO implements StatsDAO {
 				Map<String, Object> rec = new HashMap<>();
 				rec.put("receiver_name", rs.getString("receiver_name"));
 				rec.put("max_alt", rs.getFloat("max_alt"));
+				rec.put("max_alt_aircraft_id", rs.getString("max_alt_aircraft_id"));
+				rec.put("max_alt_aircraft_reg", rs.getString("max_alt_aircraft_reg"));
 				return rec;
 			}
 		};
@@ -333,15 +335,17 @@ public class SpringStatsDAO implements StatsDAO {
 	}
 
 	@Override
-	public void insertReceiverMaxAlt(long date, String receiverName, float alt) {
-		final String sql = "insert into OGN_RECEIVER(date, receiver_name, max_alt) values(?,?,?)";
-		jdbcTemplate.update(sql, date, receiverName, alt);
+	public void insertReceiverMaxAlt(long date, String receiverName, String aircraftId, String aircraftReg,
+			float aircraftAlt) {
+		final String sql = "insert into OGN_RECEIVER(date, receiver_name, max_alt, max_alt_aircraft_id, max_alt_aircraft_reg) values(?,?,?,?,?)";
+		jdbcTemplate.update(sql, date, receiverName, aircraftAlt, aircraftId, aircraftReg);
 	}
 
 	@Override
-	public void updateReceiverMaxAlt(long date, String receiverName, float alt) {
-		final String sql = "update OGN_RECEIVER set max_alt=? where date=? and receiver_name=?";
-		jdbcTemplate.update(sql, alt, date, receiverName);
+	public void updateReceiverMaxAlt(long date, String receiverName, String aircraftId, String aircraftReg,
+			float aircraftAlt) {
+		final String sql = "update OGN_RECEIVER set max_alt=?, max_alt_aircraft_id=?, max_alt_aircraft_reg=? where date=? and receiver_name=?";
+		jdbcTemplate.update(sql, aircraftAlt, aircraftId, aircraftReg, date, receiverName);
 	}
 
 }

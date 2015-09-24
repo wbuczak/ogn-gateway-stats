@@ -133,17 +133,12 @@ public class StatsServiceTest {
 		long timestamp = calendar.getTimeInMillis();
 		long date = removeTime(timestamp);
 
-		Map<String, Float> alts = new HashMap<String, Float>();
-		alts.put("Rec1", 2050.0f);
-		alts.put("Rec2", 3234.5f);
-		alts.put("Rec3", 560.0f);
-		alts.put("Rec4", 1200f);
+		service.insertOrUpdateReceivedBeaconsMaxAlt(date, "Rec1", "343433", "SP-ABC", 2050.0f);
+		service.insertOrUpdateReceivedBeaconsMaxAlt(date, "Rec2", "443433", null, 3234.5f);
+		service.insertOrUpdateReceivedBeaconsMaxAlt(date, "Rec3", "656543", null, 560.0f);
+		service.insertOrUpdateReceivedBeaconsMaxAlt(date, "Rec4", "554343", null, 1200f);
 
-		service.insertOrUpdateReceivedBeaconsMaxAlt(date, alts);
-
-		alts.put("Rec2", 3100f);
-
-		service.insertOrUpdateReceivedBeaconsMaxAlt(date, alts);
+		service.insertOrUpdateReceivedBeaconsMaxAlt(date, "Rec2", "443433", null, 3100f);
 
 		// still the previous (greater) alt should be returned
 		assertEquals(3234.5f, dao.getReceiverMaxAlt(date, "Rec2"), 1e-10);
