@@ -302,6 +302,7 @@ public class SpringStatsDAO implements StatsDAO {
 	public List<Map<String, Object>> getTopAltRecords(long date, int limit) {
 		Object[] args = null;
 		StringBuilder sql = new StringBuilder(
+
 				"select receiver_name,max_alt, max_alt_aircraft_id, max_alt_aircraft_reg, max_alt_timestamp from OGN_RECEIVER where date=? and max_alt is not null order by max_alt desc");
 
 		if (limit == 0) {
@@ -321,6 +322,7 @@ public class SpringStatsDAO implements StatsDAO {
 				rec.put("max_alt", rs.getFloat("max_alt"));
 				rec.put("max_alt_aircraft_id", rs.getString("max_alt_aircraft_id"));
 				rec.put("max_alt_aircraft_reg", rs.getString("max_alt_aircraft_reg"));
+
 				rec.put("max_alt_timestamp", rs.getLong("max_alt_timestamp"));
 
 				return rec;

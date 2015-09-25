@@ -189,6 +189,7 @@ public class StatsDaoTest {
 
 		assertEquals(Float.NaN, dao.getReceiverMaxAlt(date, "TestRec1"), 1e-10);
 
+
 		dao.insertReceiverMaxAlt(timestamp, "TestRec1", "343430", null, 2500);
 		dao.insertReceiverMaxAlt(timestamp + 30, "TestRec2", "544334", "A-BCD", 4500.5f);
 
