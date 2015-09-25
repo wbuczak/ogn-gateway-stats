@@ -181,10 +181,11 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 			dailyRecCounters.get(beacon.getReceiverName()).incrementAndGet();
 
 		if (!dailyAltCache.containsKey(beacon.getReceiverName())) {
-			Object[] maxAltAircraft = new Object[3];
+			Object[] maxAltAircraft = new Object[4];
 			maxAltAircraft[0] = beacon.getId();
 			maxAltAircraft[1] = descriptor.getRegNumber();
 			maxAltAircraft[2] = beacon.getAlt();
+			maxAltAircraft[3] = beacon.getTimestamp();
 			fWriteLock.lock();
 			dailyAltCache.put(beacon.getReceiverName(), maxAltAircraft);
 			fWriteLock.unlock();

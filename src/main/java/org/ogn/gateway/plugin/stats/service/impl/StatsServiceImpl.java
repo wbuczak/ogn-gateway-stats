@@ -69,14 +69,15 @@ public class StatsServiceImpl implements StatsService {
 
 	@Override
 	@Transactional
-	public void insertOrUpdateReceivedBeaconsMaxAlt(long date, String receiverName, String aircraftId,
+	public void insertOrUpdateReceivedBeaconsMaxAlt(long timestamp, String receiverName, String aircraftId,
 			String aircraftReg, float aircraftAlt) {
+		long date = removeTime(timestamp);
 		if (!dao.isReceiverRegistered(date, receiverName))
-			dao.insertReceiverMaxAlt(date, receiverName, aircraftId, aircraftReg, aircraftAlt);
+			dao.insertReceiverMaxAlt(timestamp, receiverName, aircraftId, aircraftReg, aircraftAlt);
 		else {
 			float alt = dao.getReceiverMaxAlt(date, receiverName);
 			if (Float.isNaN(alt) || alt < aircraftAlt) {
-				dao.updateReceiverMaxAlt(date, receiverName, aircraftId, aircraftReg, aircraftAlt);
+				dao.updateReceiverMaxAlt(timestamp, receiverName, aircraftId, aircraftReg, aircraftAlt);
 			}
 		}
 	}
