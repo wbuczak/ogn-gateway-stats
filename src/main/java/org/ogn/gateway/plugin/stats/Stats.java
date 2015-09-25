@@ -46,6 +46,8 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 
 	private static final float MAX_RANGE = 300.0f; // discard everything above that
 
+	private static final float MAX_ALT = 20000; // discard everything above that
+
 	private static ConcurrentMap<String, ReceiverBeacon> activeReceiversCache = new ConcurrentHashMap<>();
 	private static ConcurrentMap<String, AtomicInteger> dailyRecCounters = new ConcurrentHashMap<>();
 	private static ConcurrentMap<String, Object[]> dailyAltCache = new ConcurrentHashMap<>();
@@ -147,7 +149,7 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 							for (Entry<String, Object[]> entry : dailyAltCache.entrySet()) {
 								fReadLock.lock();
 								Object[] maxAltAircraft = entry.getValue();
-								service.insertOrUpdateReceivedBeaconsMaxAlt((long)maxAltAircraft[3], entry.getKey(),
+								service.insertOrUpdateReceivedBeaconsMaxAlt((long) maxAltAircraft[3], entry.getKey(),
 										(String) maxAltAircraft[0], (String) maxAltAircraft[1],
 										(float) maxAltAircraft[2]);
 								fReadLock.unlock();
@@ -180,23 +182,24 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 		else
 			dailyRecCounters.get(beacon.getReceiverName()).incrementAndGet();
 
-		if (!dailyAltCache.containsKey(beacon.getReceiverName())) {
-			Object[] maxAltAircraft = new Object[4];
-			maxAltAircraft[0] = beacon.getId();
-			maxAltAircraft[1] = descriptor.getRegNumber();
-			maxAltAircraft[2] = beacon.getAlt();
-			maxAltAircraft[3] = beacon.getTimestamp();
-			fWriteLock.lock();
-			dailyAltCache.put(beacon.getReceiverName(), maxAltAircraft);
-			fWriteLock.unlock();
-		} else {
-			Object[] maxAltAircraft = dailyAltCache.get(beacon.getReceiverName());
-			if ((float) maxAltAircraft[2] < beacon.getAlt()) {
-				fWriteLock.lock();
+		if (beacon.getAlt() < MAX_ALT)
+			if (!dailyAltCache.containsKey(beacon.getReceiverName())) {
+				Object[] maxAltAircraft = new Object[4];
+				maxAltAircraft[0] = beacon.getId();
+				maxAltAircraft[1] = descriptor.getRegNumber();
 				maxAltAircraft[2] = beacon.getAlt();
+				maxAltAircraft[3] = beacon.getTimestamp();
+				fWriteLock.lock();
+				dailyAltCache.put(beacon.getReceiverName(), maxAltAircraft);
 				fWriteLock.unlock();
+			} else {
+				Object[] maxAltAircraft = dailyAltCache.get(beacon.getReceiverName());
+				if ((float) maxAltAircraft[2] < beacon.getAlt()) {
+					fWriteLock.lock();
+					maxAltAircraft[2] = beacon.getAlt();
+					fWriteLock.unlock();
+				}
 			}
-		}
 
 		// if the receiver is already in the cache..
 		if (activeReceiversCache.containsKey(beacon.getReceiverName())) {
