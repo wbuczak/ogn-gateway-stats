@@ -147,7 +147,7 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 							for (Entry<String, Object[]> entry : dailyAltCache.entrySet()) {
 								fReadLock.lock();
 								Object[] maxAltAircraft = entry.getValue();
-								service.insertOrUpdateReceivedBeaconsMaxAlt(date, entry.getKey(),
+								service.insertOrUpdateReceivedBeaconsMaxAlt((long)maxAltAircraft[3], entry.getKey(),
 										(String) maxAltAircraft[0], (String) maxAltAircraft[1],
 										(float) maxAltAircraft[2]);
 								fReadLock.unlock();
