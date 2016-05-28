@@ -16,8 +16,8 @@
 		<property name="url"
 			value="${ogn.stats.db.url:jdbc:sqlite:ogn-stats.db}" />
 		<property name="initialSize" value="1" />
-		<property name="maxActive" value="2" />
-		<property name="maxIdle" value="2" />
+		<property name="maxActive" value="1" />
+		<property name="maxIdle" value="1" />
 		<property name="poolPreparedStatements" value="true" />
 	</bean>
 
