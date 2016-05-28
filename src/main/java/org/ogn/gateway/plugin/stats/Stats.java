@@ -165,7 +165,7 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 				}, 6, 12, TimeUnit.MINUTES); // postpone first execution 6 min
 			}
 
-		}// sync
+		} // sync
 	}
 
 	@Override
@@ -205,15 +205,15 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 		if (activeReceiversCache.containsKey(beacon.getReceiverName())) {
 
 			// calculate the distance between the beacon and its receiver
-			float range = (float) AprsUtils
-					.calcDistanceInKm(beacon, activeReceiversCache.get(beacon.getReceiverName()));
+			float range = (float) AprsUtils.calcDistanceInKm(beacon,
+					activeReceiversCache.get(beacon.getReceiverName()));
 
-			if (range >= MIN_RANGE && range < MAX_RANGE) {
-				service.insertOrUpdateRangeRecord(beacon.getTimestamp(), range, beacon.getReceiverName(),
-						beacon.getId(), descriptor.getRegNumber(), beacon.getAlt());
+			if (range >= MIN_RANGE && range < MAX_RANGE) {			
+					service.insertOrUpdateRangeRecord(beacon.getTimestamp(), range, beacon.getReceiverName(),
+							beacon.getId(), descriptor.getRegNumber(), beacon.getAlt());
 			}
 
-		}// if
+		} // if
 
 	}
 

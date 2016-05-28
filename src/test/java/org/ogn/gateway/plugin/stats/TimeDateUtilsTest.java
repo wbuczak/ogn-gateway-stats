@@ -4,35 +4,32 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.text.DateFormat;
-import java.util.Calendar;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneOffset;
 import java.util.Date;
 import java.util.TimeZone;
 
 import org.junit.Test;
-import org.ogn.gateway.plugin.stats.TimeDateUtils;
 
 public class TimeDateUtilsTest {
 
 	@Test
 	public void test() {
 
-		Calendar cal = Calendar.getInstance();
-		cal.set(Calendar.YEAR, 2015);
-		cal.set(Calendar.MONTH, 5);
-		cal.set(Calendar.DAY_OF_MONTH, 27);
-		cal.set(Calendar.HOUR_OF_DAY, 23);
-		cal.set(Calendar.MINUTE, 13);
-		cal.set(Calendar.SECOND, 15);
-		cal.set(Calendar.MILLISECOND, 45);
-		long t1 = cal.getTimeInMillis();
+		LocalDate ldate = LocalDate.of(2015, 5, 27);
+		LocalDateTime datetime = LocalDateTime.of(ldate, LocalTime.of(23, 13, 15, 45_000_000));
+
+		long t1 = datetime.toInstant(ZoneOffset.UTC).toEpochMilli();
 
 		long t2 = TimeDateUtils.removeTime(t1);
 
 		assertTrue(t2 < t1);
 
-		cal.set(Calendar.SECOND, 59);
-		cal.set(Calendar.MILLISECOND, 40);
-		long t3 = cal.getTimeInMillis();
+		LocalDateTime datetime2 = LocalDateTime.of(ldate, LocalTime.of(23, 13, 59, 40_000_000));
+
+		long t3 = datetime2.toInstant(ZoneOffset.UTC).toEpochMilli();
 
 		long t4 = TimeDateUtils.removeTime(t3);
 
