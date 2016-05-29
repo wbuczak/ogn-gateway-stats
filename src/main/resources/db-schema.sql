@@ -1,5 +1,4 @@
 
-
 /** tables **/
 CREATE TABLE IF NOT EXISTS OGN_MAX_RANGE(	
 	date INTEGER NOT NULL,

@@ -6,13 +6,11 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import java.util.Calendar;
-import java.util.GregorianCalendar;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
-import java.util.TimeZone;
 
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.ogn.gateway.plugin.stats.TimeDateUtils;
@@ -30,23 +28,12 @@ public class StatsDaoTest {
 	@Autowired
 	StatsDAO dao;
 
-	Calendar calendar;
-
-	@Before
-	public void setUp() {
-		calendar = new GregorianCalendar(TimeZone.getTimeZone("GMT"));
-		calendar.set(Calendar.YEAR, 2015);
-		calendar.set(Calendar.MONTH, 7);
-		calendar.set(Calendar.DAY_OF_MONTH, 18);
-		calendar.set(Calendar.HOUR_OF_DAY, 16);
-		calendar.set(Calendar.MINUTE, 40);
-		calendar.set(Calendar.SECOND, 15);
-	}
+	LocalDateTime datetime = LocalDateTime.of(2015, 8, 18, 16, 40, 15);
 
 	@Test
 	@DirtiesContext
 	public void test1() throws Exception {
-		long timestamp = calendar.getTimeInMillis();
+		long timestamp = datetime.toInstant(ZoneOffset.UTC).toEpochMilli();
 		try {
 			dao.insertRangeRecord(timestamp, 58.23f, "TestRec1", "OGN123456", null, 1250);
 			dao.insertRangeRecord(timestamp + 2 * 3600 * 1000 + 150, 58.23f, "TestRec1", "OGN123456", null, 1243);
@@ -58,7 +45,8 @@ public class StatsDaoTest {
 	@Test
 	@DirtiesContext
 	public void test2() throws Exception {
-		long timestamp = calendar.getTimeInMillis();
+		long timestamp = datetime.toInstant(ZoneOffset.UTC).toEpochMilli();
+
 		assertNotNull(dao);
 		dao.insertRangeRecord(timestamp, 58.23f, "TestRec1", "OGN123456", null, 420);
 		dao.updateRangeRecord(timestamp, 60.40f, "TestRec1", "FLR123456", "SP-1234", 432.5f);
@@ -75,7 +63,7 @@ public class StatsDaoTest {
 	@Test
 	@DirtiesContext
 	public void test3() throws Exception {
-		long timestamp = calendar.getTimeInMillis();
+		long timestamp = datetime.toInstant(ZoneOffset.UTC).toEpochMilli();
 		long date = TimeDateUtils.removeTime(timestamp);
 		assertEquals(-1, dao.getActiveReceiversCount(date));
 		dao.insertActiveReceiversCount(date, 100);
@@ -87,7 +75,7 @@ public class StatsDaoTest {
 	@Test
 	@DirtiesContext
 	public void test4() throws Exception {
-		long timestamp = calendar.getTimeInMillis();
+		long timestamp = datetime.toInstant(ZoneOffset.UTC).toEpochMilli();
 
 		dao.insertRangeRecord(timestamp, 58.23f, "TestRec1", "OGN123456", null, 500);
 		dao.insertRangeRecord(timestamp + 100, 120.54f, "TestRec2", "OGN123457", null, 520);
@@ -107,20 +95,23 @@ public class StatsDaoTest {
 	@Test
 	@DirtiesContext
 	public void test5() throws Exception {
-		long timestamp = calendar.getTimeInMillis();
+		long timestamp = datetime.toInstant(ZoneOffset.UTC).toEpochMilli();
 
 		long date = TimeDateUtils.removeTime(timestamp);
 		dao.insertActiveReceiversCount(date, 100);
 
-		calendar.set(Calendar.DAY_OF_MONTH, 19);
+		LocalDateTime datetime2 = datetime.plusDays(1); // 19
 
-		dao.insertActiveReceiversCount(TimeDateUtils.removeTime(calendar.getTimeInMillis()), 102);
+		dao.insertActiveReceiversCount(TimeDateUtils.removeTime(datetime2.toInstant(ZoneOffset.UTC).toEpochMilli()),
+				102);
 
-		calendar.set(Calendar.DAY_OF_MONTH, 20);
-		dao.insertActiveReceiversCount(TimeDateUtils.removeTime(calendar.getTimeInMillis()), 98);
+		datetime2 = datetime2.plusDays(1); // 20
+		dao.insertActiveReceiversCount(TimeDateUtils.removeTime(datetime2.toInstant(ZoneOffset.UTC).toEpochMilli()),
+				98);
 
-		calendar.set(Calendar.DAY_OF_MONTH, 21);
-		dao.insertActiveReceiversCount(TimeDateUtils.removeTime(calendar.getTimeInMillis()), 99);
+		datetime2 = datetime2.plusDays(1); // 21
+		dao.insertActiveReceiversCount(TimeDateUtils.removeTime(datetime2.toInstant(ZoneOffset.UTC).toEpochMilli()),
+				99);
 
 		List<Map<String, Object>> records = dao.getActiveReceiversCount(10);
 		assertNotNull(records);
@@ -133,7 +124,7 @@ public class StatsDaoTest {
 	@Test
 	@DirtiesContext
 	public void test6() throws Exception {
-		long timestamp = calendar.getTimeInMillis();
+		long timestamp = datetime.toInstant(ZoneOffset.UTC).toEpochMilli();
 
 		dao.insertRangeRecord(timestamp, 58.23f, "TestRec1", "OGN123456", null, 500);
 		dao.insertRangeRecord(timestamp + 100, 120.54f, "TestRec2", "OGN123457", null, 520);
@@ -157,7 +148,7 @@ public class StatsDaoTest {
 	@Test
 	@DirtiesContext
 	public void test7() throws Exception {
-		long timestamp = calendar.getTimeInMillis();
+		long timestamp = datetime.toInstant(ZoneOffset.UTC).toEpochMilli();
 
 		long date = TimeDateUtils.removeTime(timestamp);
 
@@ -180,15 +171,13 @@ public class StatsDaoTest {
 	@Test
 	@DirtiesContext
 	public void test8() throws Exception {
-
-		long timestamp = calendar.getTimeInMillis();
+		long timestamp = datetime.toInstant(ZoneOffset.UTC).toEpochMilli();
 
 		long date = TimeDateUtils.removeTime(timestamp);
 
 		assertFalse(dao.isReceiverRegistered(date, "TestRec1"));
 
 		assertEquals(Float.NaN, dao.getReceiverMaxAlt(date, "TestRec1"), 1e-10);
-
 
 		dao.insertReceiverMaxAlt(timestamp, "TestRec1", "343430", null, 2500);
 		dao.insertReceiverMaxAlt(timestamp + 30, "TestRec2", "544334", "A-BCD", 4500.5f);
@@ -210,7 +199,6 @@ public class StatsDaoTest {
 		assertEquals(4520f, topAlts.get(0).get("max_alt"));
 		assertEquals("A-BCD", topAlts.get(0).get("max_alt_aircraft_reg"));
 		assertEquals(timestamp + 130, (long) topAlts.get(0).get("max_alt_timestamp"));
-
 	}
 
 }

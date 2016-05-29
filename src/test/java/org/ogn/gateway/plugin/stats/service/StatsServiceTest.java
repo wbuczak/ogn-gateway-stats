@@ -3,11 +3,10 @@ package org.ogn.gateway.plugin.stats.service;
 import static org.junit.Assert.assertEquals;
 import static org.ogn.gateway.plugin.stats.TimeDateUtils.removeTime;
 
-import java.util.Calendar;
-import java.util.GregorianCalendar;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.Test;
@@ -33,16 +32,10 @@ public class StatsServiceTest {
 	@Test
 	@DirtiesContext
 	public void test1() {
+		LocalDateTime datetime = LocalDateTime.of(2015, 8, 18, 16, 40, 15);
+		System.out.println(datetime);
+		long timestamp = datetime.toInstant(ZoneOffset.UTC).toEpochMilli();
 
-		Calendar calendar = new GregorianCalendar(TimeZone.getTimeZone("GMT"));
-		calendar.set(Calendar.YEAR, 2015);
-		calendar.set(Calendar.MONTH, 7);
-		calendar.set(Calendar.DAY_OF_MONTH, 18);
-		calendar.set(Calendar.HOUR_OF_DAY, 16);
-		calendar.set(Calendar.MINUTE, 40);
-		calendar.set(Calendar.SECOND, 15);
-
-		long timestamp = calendar.getTimeInMillis();
 		service.insertOrUpdateRangeRecord(timestamp, 58.23f, "TestRec1", "OGN123456", null, 600);
 		service.insertOrUpdateRangeRecord(timestamp, 60.23f, "TestRec1", "OGN123456", null, 600);
 		service.insertOrUpdateRangeRecord(timestamp, 57.80f, "TestRec1", "FLR543533", null, 600);
@@ -51,13 +44,11 @@ public class StatsServiceTest {
 		// the record with largest distance for a day should be remembered
 		assertEquals(60.23f, rec.get("range"));
 
-		// goto next day, just after midnight
-		calendar.set(Calendar.DAY_OF_MONTH, 19);
-		calendar.set(Calendar.HOUR_OF_DAY, 0);
-		calendar.set(Calendar.MINUTE, 0);
-		calendar.set(Calendar.SECOND, 01);
+		// set next day, just after midnight
+		LocalDateTime datetime2 = datetime.plusDays(1).minusHours(16).minusMinutes(40).minusSeconds(14);
+		System.out.println(datetime2);
+		long timestamp2 = datetime2.toInstant(ZoneOffset.UTC).toEpochMilli();
 
-		long timestamp2 = calendar.getTimeInMillis();
 		service.insertOrUpdateRangeRecord(timestamp2, 120.0f, "TestRec1", "OGN123456", null, 720);
 
 		rec = dao.getRangeRecord(removeTime(timestamp), "TestRec1");
@@ -72,16 +63,10 @@ public class StatsServiceTest {
 	@Test
 	@DirtiesContext
 	public void test2() {
+		LocalDateTime datetime = LocalDateTime.of(2015, 8, 18, 16, 40, 15);
+		System.out.println(datetime);
+		long timestamp = datetime.toInstant(ZoneOffset.UTC).toEpochMilli();
 
-		Calendar calendar = new GregorianCalendar(TimeZone.getTimeZone("GMT"));
-		calendar.set(Calendar.YEAR, 2015);
-		calendar.set(Calendar.MONTH, 7);
-		calendar.set(Calendar.DAY_OF_MONTH, 18);
-		calendar.set(Calendar.HOUR_OF_DAY, 16);
-		calendar.set(Calendar.MINUTE, 40);
-		calendar.set(Calendar.SECOND, 15);
-
-		long timestamp = calendar.getTimeInMillis();
 		long date = removeTime(timestamp);
 		service.insertOrUpdateActiveReceiversCount(date, 100);
 		service.insertOrUpdateActiveReceiversCount(date, 101);
@@ -93,15 +78,10 @@ public class StatsServiceTest {
 	@Test
 	@DirtiesContext
 	public void test3() {
-		Calendar calendar = new GregorianCalendar(TimeZone.getTimeZone("GMT"));
-		calendar.set(Calendar.YEAR, 2015);
-		calendar.set(Calendar.MONTH, 7);
-		calendar.set(Calendar.DAY_OF_MONTH, 18);
-		calendar.set(Calendar.HOUR_OF_DAY, 16);
-		calendar.set(Calendar.MINUTE, 40);
-		calendar.set(Calendar.SECOND, 15);
+		LocalDateTime datetime = LocalDateTime.of(2015, 8, 18, 16, 40, 15);
+		System.out.println(datetime);
+		long timestamp = datetime.toInstant(ZoneOffset.UTC).toEpochMilli();
 
-		long timestamp = calendar.getTimeInMillis();
 		long date = removeTime(timestamp);
 
 		Map<String, AtomicInteger> counters = new HashMap<String, AtomicInteger>();
@@ -122,15 +102,11 @@ public class StatsServiceTest {
 	@Test
 	@DirtiesContext
 	public void test4() {
-		Calendar calendar = new GregorianCalendar(TimeZone.getTimeZone("GMT"));
-		calendar.set(Calendar.YEAR, 2015);
-		calendar.set(Calendar.MONTH, 7);
-		calendar.set(Calendar.DAY_OF_MONTH, 18);
-		calendar.set(Calendar.HOUR_OF_DAY, 16);
-		calendar.set(Calendar.MINUTE, 40);
-		calendar.set(Calendar.SECOND, 15);
 
-		long timestamp = calendar.getTimeInMillis();
+		LocalDateTime datetime = LocalDateTime.of(2015, 8, 18, 16, 40, 15);
+		System.out.println(datetime);
+		long timestamp = datetime.toInstant(ZoneOffset.UTC).toEpochMilli();
+
 		long date = removeTime(timestamp);
 
 		service.insertOrUpdateReceivedBeaconsMaxAlt(date, "Rec1", "343433", "SP-ABC", 2050.0f);
