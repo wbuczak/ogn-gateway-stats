@@ -11,7 +11,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.ogn.gateway.plugin.stats.dao.StatsDAO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
@@ -24,23 +23,23 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 public class StatsServiceTest {
 
 	@Autowired
-	StatsService service;
+	StatsReceiversService rService;
 
 	@Autowired
-	StatsDAO dao;
+	StatsAircraftService aService;
 
 	@Test
 	@DirtiesContext
-	public void test1() {
+	public void testMaxRange1() {
 		LocalDateTime datetime = LocalDateTime.of(2015, 8, 18, 16, 40, 15);
 		System.out.println(datetime);
 		long timestamp = datetime.toInstant(ZoneOffset.UTC).toEpochMilli();
 
-		service.insertOrUpdateRangeRecord(timestamp, 58.23f, "TestRec1", "OGN123456", null, 600);
-		service.insertOrUpdateRangeRecord(timestamp, 60.23f, "TestRec1", "OGN123456", null, 600);
-		service.insertOrUpdateRangeRecord(timestamp, 57.80f, "TestRec1", "FLR543533", null, 600);
+		rService.insertOrUpdateMaxRange(timestamp, 58.23f, "TestRec1", "OGN123456", null, 600);
+		rService.insertOrUpdateMaxRange(timestamp, 60.23f, "TestRec1", "OGN123456", null, 600);
+		rService.insertOrUpdateMaxRange(timestamp, 57.80f, "TestRec1", "FLR543533", null, 600);
 
-		Map<String, Object> rec = dao.getRangeRecord(removeTime(timestamp), "TestRec1");
+		Map<String, Object> rec = rService.getMaxRange(removeTime(timestamp), "TestRec1");
 		// the record with largest distance for a day should be remembered
 		assertEquals(60.23f, rec.get("range"));
 
@@ -49,35 +48,35 @@ public class StatsServiceTest {
 		System.out.println(datetime2);
 		long timestamp2 = datetime2.toInstant(ZoneOffset.UTC).toEpochMilli();
 
-		service.insertOrUpdateRangeRecord(timestamp2, 120.0f, "TestRec1", "OGN123456", null, 720);
+		rService.insertOrUpdateMaxRange(timestamp2, 120.0f, "TestRec1", "OGN123456", null, 720);
 
-		rec = dao.getRangeRecord(removeTime(timestamp), "TestRec1");
+		rec = rService.getMaxRange(removeTime(timestamp), "TestRec1");
 		// the record with largest distance for a day should be remembered
 		assertEquals(60.23f, rec.get("range"));
 
-		rec = dao.getRangeRecord(removeTime(timestamp2), "TestRec1");
+		rec = rService.getMaxRange(removeTime(timestamp2), "TestRec1");
 		// the record with largest distance for a day should be remembered
 		assertEquals(120.0f, rec.get("range"));
 	}
 
 	@Test
 	@DirtiesContext
-	public void test2() {
+	public void testAcriveReceiversCounter1() {
 		LocalDateTime datetime = LocalDateTime.of(2015, 8, 18, 16, 40, 15);
 		System.out.println(datetime);
 		long timestamp = datetime.toInstant(ZoneOffset.UTC).toEpochMilli();
 
 		long date = removeTime(timestamp);
-		service.insertOrUpdateActiveReceiversCount(date, 100);
-		service.insertOrUpdateActiveReceiversCount(date, 101);
-		service.insertOrUpdateActiveReceiversCount(date, 102);
+		rService.insertOrUpdateActiveReceiversCounter(date, 100);
+		rService.insertOrUpdateActiveReceiversCounter(date, 101);
+		rService.insertOrUpdateActiveReceiversCounter(date, 102);
 
-		assertEquals(102, dao.getActiveReceiversCount(date));
+		assertEquals(102, rService.getActiveReceiversCounter(date));
 	}
 
 	@Test
 	@DirtiesContext
-	public void test3() {
+	public void testReceivedBeaconsCounters() {
 		LocalDateTime datetime = LocalDateTime.of(2015, 8, 18, 16, 40, 15);
 		System.out.println(datetime);
 		long timestamp = datetime.toInstant(ZoneOffset.UTC).toEpochMilli();
@@ -90,18 +89,25 @@ public class StatsServiceTest {
 		counters.put("Rec3", new AtomicInteger(120));
 		counters.put("Rec4", new AtomicInteger(40));
 
-		service.insertOrUpdateReceivedBeaconsCounters(date, counters);
+		rService.insertOrUpdateReceptionCounters(date, counters);
 
-		service.insertOrUpdateActiveReceiversCount(date, 100);
-		service.insertOrUpdateActiveReceiversCount(date, 101);
-		service.insertOrUpdateActiveReceiversCount(date, 102);
+		rService.insertOrUpdateActiveReceiversCounter(date, 100);
+		rService.insertOrUpdateActiveReceiversCounter(date, 101);
+		rService.insertOrUpdateActiveReceiversCounter(date, 102);
+		
+		// simulate restart - counter is smaller than the last in the db
+		counters = new HashMap<String, AtomicInteger>();		
+		counters.put("Rec3", new AtomicInteger(10));
+		rService.insertOrUpdateReceptionCounters(date, counters);
 
-		assertEquals(120, dao.getReceiverReceptionCount(date, "Rec3"));
+		assertEquals(120, rService.getReceptionCounter(date, "Rec3"));
+		
+		
 	}
 
 	@Test
 	@DirtiesContext
-	public void test4() {
+	public void testReceivedBeaxonsMaxAlt() {
 
 		LocalDateTime datetime = LocalDateTime.of(2015, 8, 18, 16, 40, 15);
 		System.out.println(datetime);
@@ -109,15 +115,15 @@ public class StatsServiceTest {
 
 		long date = removeTime(timestamp);
 
-		service.insertOrUpdateReceivedBeaconsMaxAlt(date, "Rec1", "343433", "SP-ABC", 2050.0f);
-		service.insertOrUpdateReceivedBeaconsMaxAlt(date, "Rec2", "443433", null, 3234.5f);
-		service.insertOrUpdateReceivedBeaconsMaxAlt(date, "Rec3", "656543", null, 560.0f);
-		service.insertOrUpdateReceivedBeaconsMaxAlt(date, "Rec4", "554343", null, 1200f);
+		rService.insertOrUpdateMaxAlt(date, "Rec1", "343433", "SP-ABC", 2050.0f);
+		rService.insertOrUpdateMaxAlt(date, "Rec2", "443433", null, 3234.5f);
+		rService.insertOrUpdateMaxAlt(date, "Rec3", "656543", null, 560.0f);
+		rService.insertOrUpdateMaxAlt(date, "Rec4", "554343", null, 1200f);
 
-		service.insertOrUpdateReceivedBeaconsMaxAlt(date, "Rec2", "443433", null, 3100f);
+		rService.insertOrUpdateMaxAlt(date, "Rec2", "443433", null, 3100f);
 
 		// still the previous (greater) alt should be returned
-		assertEquals(3234.5f, dao.getReceiverMaxAlt(date, "Rec2"), 1e-10);
+		assertEquals(3234.5f, rService.getMaxAlt(date, "Rec2"), 1e-10);
 	}
 
 }

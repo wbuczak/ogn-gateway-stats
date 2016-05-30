@@ -28,11 +28,11 @@ public class SpringStatsDAO implements StatsDAO {
 	}
 
 	@Override
-	public void insertRangeRecord(long timestamp, float distance, String receiverName, String aircraftId,
+	public void insertOrReplaceMaxRange(long timestamp, float distance, String receiverName, String aircraftId,
 			String aircraftReg, float aircraftAlt) {
 		long date = removeTime(timestamp);
 		final StringBuilder sql = new StringBuilder(
-				"insert into OGN_MAX_RANGE(date, receiver_name, range, timestamp, aircraft_id, aircraft_reg, alt) ");
+				"insert or replace into OGN_MAX_RANGE(date, receiver_name, range, timestamp, aircraft_id, aircraft_reg, alt) ");
 		sql.append("values(?,?,?,?,?,?,?)");
 
 		jdbcTemplate.update(sql.toString(), date, receiverName, distance, timestamp, aircraftId, aircraftReg,
@@ -40,19 +40,7 @@ public class SpringStatsDAO implements StatsDAO {
 	}
 
 	@Override
-	public void updateRangeRecord(long timestamp, float distance, String receiverName, String aircraftId,
-			String aircraftReg, float aircraftAlt) {
-
-		final StringBuilder sql = new StringBuilder("update OGN_MAX_RANGE ");
-		sql.append("set timestamp=?, range=?, aircraft_id=?, aircraft_reg=?, alt=?");
-		sql.append("where date=? and receiver_name=?");
-
-		jdbcTemplate.update(sql.toString(), timestamp, distance, aircraftId, aircraftReg, aircraftAlt,
-				removeTime(timestamp), receiverName);
-	}
-
-	@Override
-	public Map<String, Object> getRangeRecord(final long date, final String receiverName) {
+	public Map<String, Object> getMaxRange(final long date, final String receiverName) {
 
 		String sql = "select * from OGN_MAX_RANGE where date=? and receiver_name=?";
 
@@ -83,19 +71,13 @@ public class SpringStatsDAO implements StatsDAO {
 	}
 
 	@Override
-	public void insertActiveReceiversCount(long date, int count) {
-		final String sql = "insert into OGN_STATS(date, online_receivers) values(?,?)";
+	public void insertOrReplaceActiveReceiversCounter(long date, int count) {
+		final String sql = "insert or replace into OGN_STATS(date, online_receivers) values(?,?)";
 		jdbcTemplate.update(sql, date, count);
 	}
 
 	@Override
-	public void updateActiveReceiversCount(long date, int count) {
-		final String sql = "update OGN_STATS set online_receivers=? where date=?";
-		jdbcTemplate.update(sql, count, date);
-	}
-
-	@Override
-	public int getActiveReceiversCount(long date) {
+	public int getActiveReceiversCounter(long date) {
 		final String sql = "select online_receivers from OGN_STATS where date=?";
 
 		Integer result = -1;
@@ -110,7 +92,7 @@ public class SpringStatsDAO implements StatsDAO {
 	}
 
 	@Override
-	public List<Map<String, Object>> getTopRangeRecords(int limit) {
+	public List<Map<String, Object>> getTopMaxRanges(int limit) {
 
 		Object[] args = null;
 		StringBuilder sql = new StringBuilder(
@@ -144,7 +126,7 @@ public class SpringStatsDAO implements StatsDAO {
 	}
 
 	@Override
-	public List<Map<String, Object>> getTopRangeRecords(long date, int limit) {
+	public List<Map<String, Object>> getTopMaxRanges(long date, int limit) {
 
 		Object[] args = null;
 		StringBuilder sql = new StringBuilder("select * from OGN_MAX_RANGE where date=? order by range desc");
@@ -175,7 +157,7 @@ public class SpringStatsDAO implements StatsDAO {
 	}
 
 	@Override
-	public List<Map<String, Object>> getActiveReceiversCount(int days) {
+	public List<Map<String, Object>> getActiveReceiversCounters(int days) {
 
 		Object[] args = null;
 		StringBuilder sql = new StringBuilder("select * from OGN_STATS order by date desc");
@@ -203,19 +185,13 @@ public class SpringStatsDAO implements StatsDAO {
 	}
 
 	@Override
-	public void insertReceiverReceptionCount(long date, String receiverName, int count) {
-		final String sql = "insert into OGN_RECEIVER(date, receiver_name, beacons_received) values(?,?,?)";
+	public void insertOrReplaceReceptionCounter(long date, String receiverName, int count) {
+		final String sql = "insert or replace into OGN_RECEIVER(date, receiver_name, beacons_received) values(?,?,?)";
 		jdbcTemplate.update(sql, date, receiverName, count);
 	}
 
 	@Override
-	public void updateReceiverReceptionCount(long date, String receiverName, int count) {
-		final String sql = "update OGN_RECEIVER set beacons_received=? where date=? and receiver_name=?";
-		jdbcTemplate.update(sql, count, date, receiverName);
-	}
-
-	@Override
-	public int getReceiverReceptionCount(long date, String receiverName) {
+	public int getReceptionCounter(long date, String receiverName) {
 		final String sql = "select beacons_received from OGN_RECEIVER where date=? and receiver_name=?";
 
 		Integer result = -1;
@@ -230,7 +206,7 @@ public class SpringStatsDAO implements StatsDAO {
 	}
 
 	@Override
-	public List<Map<String, Object>> getTopCountRecords(int limit) {
+	public List<Map<String, Object>> getTopReceptionCounters(int limit) {
 
 		Object[] args = null;
 		StringBuilder sql = new StringBuilder("select * from OGN_RECEIVER_V order by beacons_received desc");
@@ -257,7 +233,7 @@ public class SpringStatsDAO implements StatsDAO {
 	}
 
 	@Override
-	public List<Map<String, Object>> getTopCountRecords(long date, int limit) {
+	public List<Map<String, Object>> getTopReceptionCounters(long date, int limit) {
 
 		Object[] args = null;
 		StringBuilder sql = new StringBuilder("select * from OGN_RECEIVER where date=? order by beacons_received desc");
@@ -285,7 +261,7 @@ public class SpringStatsDAO implements StatsDAO {
 	}
 
 	@Override
-	public float getReceiverMaxAlt(long date, String receiverName) {
+	public float getMaxAlt(long date, String receiverName) {
 		final String sql = "select max_alt from OGN_RECEIVER where date=? and receiver_name=?";
 
 		Float result = null;
@@ -299,11 +275,11 @@ public class SpringStatsDAO implements StatsDAO {
 	}
 
 	@Override
-	public List<Map<String, Object>> getTopAltRecords(long date, int limit) {
+	public List<Map<String, Object>> getMaxAlts(long date, int limit) {
 		Object[] args = null;
 		StringBuilder sql = new StringBuilder(
-
-				"select receiver_name,max_alt, max_alt_aircraft_id, max_alt_aircraft_reg, max_alt_timestamp from OGN_RECEIVER where date=? and max_alt is not null order by max_alt desc");
+				"select receiver_name,max_alt, max_alt_aircraft_id, max_alt_aircraft_reg, max_alt_timestamp");
+		sql.append(" from OGN_RECEIVER").append(" where date=? and max_alt is not null order by max_alt desc");
 
 		if (limit == 0) {
 			args = new Object[] { date };
@@ -334,25 +310,13 @@ public class SpringStatsDAO implements StatsDAO {
 	}
 
 	@Override
-	public boolean isReceiverRegistered(long date, String receiverName) {
-		return jdbcTemplate.queryForObject("select count(1) from OGN_RECEIVER where date=? and receiver_name=?",
-				Integer.class, date, receiverName) > 0;
-	}
-
-	@Override
-	public void insertReceiverMaxAlt(long timestamp, String receiverName, String aircraftId, String aircraftReg,
+	public void insertOrReplaceMaxAlt(long timestamp, String receiverName, String aircraftId, String aircraftReg,
 			float aircraftAlt) {
-		final String sql = "insert into OGN_RECEIVER(date, receiver_name, max_alt, max_alt_aircraft_id, max_alt_aircraft_reg, max_alt_timestamp) values(?,?,?,?,?,?)";
+		final StringBuilder sql = new StringBuilder("insert or replace into OGN_RECEIVER(")
+				.append("date, receiver_name, max_alt, max_alt_aircraft_id, max_alt_aircraft_reg, max_alt_timestamp)")
+				.append(" values(?,?,?,?,?,?)");
 		long date = removeTime(timestamp);
-		jdbcTemplate.update(sql, date, receiverName, aircraftAlt, aircraftId, aircraftReg, timestamp);
-	}
-
-	@Override
-	public void updateReceiverMaxAlt(long timestamp, String receiverName, String aircraftId, String aircraftReg,
-			float aircraftAlt) {
-		long date = removeTime(timestamp);
-		final String sql = "update OGN_RECEIVER set max_alt=?, max_alt_aircraft_id=?, max_alt_aircraft_reg=?, max_alt_timestamp=? where date=? and receiver_name=?";
-		jdbcTemplate.update(sql, aircraftAlt, aircraftId, aircraftReg, timestamp, date, receiverName);
+		jdbcTemplate.update(sql.toString(), date, receiverName, aircraftAlt, aircraftId, aircraftReg, timestamp);
 	}
 
 }

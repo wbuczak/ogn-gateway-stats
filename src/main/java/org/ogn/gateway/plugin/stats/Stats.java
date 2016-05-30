@@ -22,7 +22,8 @@ import org.ogn.commons.beacon.ReceiverBeacon;
 import org.ogn.commons.beacon.forwarder.OgnAircraftBeaconForwarder;
 import org.ogn.commons.beacon.forwarder.OgnReceiverBeaconForwarder;
 import org.ogn.commons.utils.AprsUtils;
-import org.ogn.gateway.plugin.stats.service.StatsService;
+import org.ogn.gateway.plugin.stats.service.StatsAircraftService;
+import org.ogn.gateway.plugin.stats.service.StatsReceiversService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
@@ -52,7 +53,8 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 	private static ConcurrentMap<String, AtomicInteger> dailyRecCounters = new ConcurrentHashMap<>();
 	private static ConcurrentMap<String, Object[]> dailyAltCache = new ConcurrentHashMap<>();
 
-	private static StatsService service;
+	//private static StatsAircraftService aService;
+	private static StatsReceiversService rService;
 
 	private static ClassPathXmlApplicationContext ctx;
 
@@ -123,7 +125,8 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 				try {
 					ctx = new ClassPathXmlApplicationContext("classpath:stats-application-context.xml");
 					ctx.getEnvironment().setDefaultProfiles("PRO");
-					service = ctx.getBean(StatsService.class);
+					//aService = ctx.getBean(StatsAircraftService.class);
+					rService = ctx.getBean(StatsReceiversService.class);
 
 					initialized = true;
 				} catch (Exception ex) {
@@ -132,37 +135,33 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 
 				scheduler = Executors.newScheduledThreadPool(1);
 
-				receiversCountFuture = scheduler.scheduleAtFixedRate(new Runnable() {
+				Runnable job = () -> {
+					try {
+						long date = TimeDateUtils.removeTime(System.currentTimeMillis());
 
-					@Override
-					public void run() {
-						try {
+						LOG.debug("current activeReceiversCache size: {}", activeReceiversCache.size());
+						rService.insertOrUpdateActiveReceiversCounter(date, activeReceiversCache.size());
+						LOG.debug("current daily receiver counter's cache size: {}", dailyRecCounters.size());
+						rService.insertOrUpdateReceptionCounters(date, dailyRecCounters);
+						LOG.debug("current daily receiver max-alt cache size: {}", dailyAltCache.size());
 
-							long date = TimeDateUtils.removeTime(System.currentTimeMillis());
-
-							LOG.debug("current activeReceiversCache size: {}", activeReceiversCache.size());
-							service.insertOrUpdateActiveReceiversCount(date, activeReceiversCache.size());
-							LOG.debug("current daily receiver counter's cache size: {}", dailyRecCounters.size());
-							service.insertOrUpdateReceivedBeaconsCounters(date, dailyRecCounters);
-							LOG.debug("current daily receiver max-alt cache size: {}", dailyAltCache.size());
-
-							for (Entry<String, Object[]> entry : dailyAltCache.entrySet()) {
-								fReadLock.lock();
-								Object[] maxAltAircraft = entry.getValue();
-								service.insertOrUpdateReceivedBeaconsMaxAlt((long) maxAltAircraft[3], entry.getKey(),
-										(String) maxAltAircraft[0], (String) maxAltAircraft[1],
-										(float) maxAltAircraft[2]);
-								fReadLock.unlock();
-							}
-
-							// clear activeReceivers cache
-							activeReceiversCache.clear();
-						} catch (Exception ex) {
-							LOG.error("exception caught", ex);
+						for (Entry<String, Object[]> entry : dailyAltCache.entrySet()) {
+							fReadLock.lock();
+							Object[] maxAltAircraft = entry.getValue();
+							rService.insertOrUpdateMaxAlt((long) maxAltAircraft[3], entry.getKey(),
+									(String) maxAltAircraft[0], (String) maxAltAircraft[1], (float) maxAltAircraft[2]);
+							fReadLock.unlock();
 						}
 
+						// clear activeReceivers cache
+						activeReceiversCache.clear();
+					} catch (Exception ex) {
+						LOG.error("exception caught", ex);
 					}
-				}, 6, 12, TimeUnit.MINUTES); // postpone first execution 6 min
+				};
+
+				receiversCountFuture = scheduler.scheduleAtFixedRate(job, 6, 12, TimeUnit.MINUTES); // postpone first
+																									// execution 6 min
 			}
 
 		} // sync
@@ -208,9 +207,9 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 			float range = (float) AprsUtils.calcDistanceInKm(beacon,
 					activeReceiversCache.get(beacon.getReceiverName()));
 
-			if (range >= MIN_RANGE && range < MAX_RANGE) {			
-					service.insertOrUpdateRangeRecord(beacon.getTimestamp(), range, beacon.getReceiverName(),
-							beacon.getId(), descriptor.getRegNumber(), beacon.getAlt());
+			if (range >= MIN_RANGE && range < MAX_RANGE) {
+				rService.insertOrUpdateMaxRange(beacon.getTimestamp(), range, beacon.getReceiverName(),
+						beacon.getId(), descriptor.getRegNumber(), beacon.getAlt());
 			}
 
 		} // if
