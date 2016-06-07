@@ -22,7 +22,6 @@ import org.ogn.commons.beacon.ReceiverBeacon;
 import org.ogn.commons.beacon.forwarder.OgnAircraftBeaconForwarder;
 import org.ogn.commons.beacon.forwarder.OgnReceiverBeaconForwarder;
 import org.ogn.commons.utils.AprsUtils;
-import org.ogn.gateway.plugin.stats.service.StatsAircraftService;
 import org.ogn.gateway.plugin.stats.service.StatsReceiversService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,13 +46,13 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 
 	private static final float MAX_RANGE = 300.0f; // discard everything above that
 
-	private static final float MAX_ALT = 20000; // discard everything above that
+	private static final float MAX_ALT = 15000; // discard everything above that
 
 	private static ConcurrentMap<String, ReceiverBeacon> activeReceiversCache = new ConcurrentHashMap<>();
 	private static ConcurrentMap<String, AtomicInteger> dailyRecCounters = new ConcurrentHashMap<>();
 	private static ConcurrentMap<String, Object[]> dailyAltCache = new ConcurrentHashMap<>();
 
-	//private static StatsAircraftService aService;
+	// private static StatsAircraftService aService;
 	private static StatsReceiversService rService;
 
 	private static ClassPathXmlApplicationContext ctx;
@@ -125,7 +124,7 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 				try {
 					ctx = new ClassPathXmlApplicationContext("classpath:stats-application-context.xml");
 					ctx.getEnvironment().setDefaultProfiles("PRO");
-					//aService = ctx.getBean(StatsAircraftService.class);
+					// aService = ctx.getBean(StatsAircraftService.class);
 					rService = ctx.getBean(StatsReceiversService.class);
 
 					initialized = true;
@@ -208,8 +207,8 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 					activeReceiversCache.get(beacon.getReceiverName()));
 
 			if (range >= MIN_RANGE && range < MAX_RANGE) {
-				rService.insertOrUpdateMaxRange(beacon.getTimestamp(), range, beacon.getReceiverName(),
-						beacon.getId(), descriptor.getRegNumber(), beacon.getAlt());
+				rService.insertOrUpdateMaxRange(beacon.getTimestamp(), range, beacon.getReceiverName(), beacon.getId(),
+						descriptor.getRegNumber(), beacon.getAlt());
 			}
 
 		} // if

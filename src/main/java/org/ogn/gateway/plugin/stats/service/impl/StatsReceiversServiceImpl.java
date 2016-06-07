@@ -51,7 +51,7 @@ public class StatsReceiversServiceImpl implements StatsReceiversService {
 	public void insertOrUpdateReceptionCounters(long date, Map<String, AtomicInteger> counters) {
 		for (Entry<String, AtomicInteger> e : counters.entrySet()) {
 			int dbcount = dao.getReceptionCounter(date, e.getKey());
-			// update only if new value is greater than hte last in the db (prevents faulty
+			// update only if new value is greater than the last in the db (prevents faulty
 			// updates when restarting the gateway)
 			if (-1 == dbcount || dbcount < e.getValue().get()) {
 				dao.insertOrReplaceReceptionCounter(date, e.getKey(), e.getValue().get());
