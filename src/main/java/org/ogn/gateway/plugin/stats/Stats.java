@@ -55,8 +55,6 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 	// private static StatsAircraftService aService;
 	private static StatsReceiversService rService;
 
-	private static ClassPathXmlApplicationContext ctx;
-
 	private static Object syncMonitor = new Integer(1);
 	private static volatile boolean initialized = false;
 
@@ -121,12 +119,10 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 
 		synchronized (syncMonitor) {
 			if (!initialized) {
-				try {
-					ctx = new ClassPathXmlApplicationContext("classpath:stats-application-context.xml");
+				try (ClassPathXmlApplicationContext ctx = new ClassPathXmlApplicationContext(
+						"classpath:stats-application-context.xml")) {
 					ctx.getEnvironment().setDefaultProfiles("PRO");
-					// aService = ctx.getBean(StatsAircraftService.class);
 					rService = ctx.getBean(StatsReceiversService.class);
-
 					initialized = true;
 				} catch (Exception ex) {
 					LOG.error("context initialization failed", ex);
