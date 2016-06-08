@@ -52,6 +52,8 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 	private static ConcurrentMap<String, AtomicInteger> dailyRecCounters = new ConcurrentHashMap<>();
 	private static ConcurrentMap<String, Object[]> dailyAltCache = new ConcurrentHashMap<>();
 
+	private ClassPathXmlApplicationContext ctx;
+
 	// private static StatsAircraftService aService;
 	private static StatsReceiversService rService;
 
@@ -119,8 +121,8 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 
 		synchronized (syncMonitor) {
 			if (!initialized) {
-				try (ClassPathXmlApplicationContext ctx = new ClassPathXmlApplicationContext(
-						"classpath:stats-application-context.xml")) {
+				try {
+					ctx = new ClassPathXmlApplicationContext("classpath:stats-application-context.xml");
 					ctx.getEnvironment().setDefaultProfiles("PRO");
 					rService = ctx.getBean(StatsReceiversService.class);
 					initialized = true;
@@ -165,6 +167,9 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 	@Override
 	public void stop() {
 		receiversCountFuture.cancel(true);
+
+		if (ctx != null)
+			ctx.close();
 	}
 
 	@Override
