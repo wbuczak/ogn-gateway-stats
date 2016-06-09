@@ -114,7 +114,7 @@ public class StatsReceiversServiceImpl implements StatsReceiversService {
 	@Override
 	@Transactional(readOnly = true)
 	public List<Map<String, Object>> getTopReceptionCounters(long date, int limit) {
-		return dao.getTopMaxRanges(date, limit);
+		return dao.getTopReceptionCounters(date, limit);
 	}
 
 	@Override
