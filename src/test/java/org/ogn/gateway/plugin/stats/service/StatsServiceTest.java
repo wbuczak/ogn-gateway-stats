@@ -32,7 +32,7 @@ public class StatsServiceTest {
 	@DirtiesContext
 	public void testMaxRange1() {
 		LocalDateTime datetime = LocalDateTime.of(2015, 8, 18, 16, 40, 15);
-		System.out.println(datetime);
+		
 		long timestamp = datetime.toInstant(ZoneOffset.UTC).toEpochMilli();
 
 		rService.insertOrUpdateMaxRange(timestamp, 58.23f, "TestRec1", "OGN123456", null, 600);
@@ -45,7 +45,7 @@ public class StatsServiceTest {
 
 		// set next day, just after midnight
 		LocalDateTime datetime2 = datetime.plusDays(1).minusHours(16).minusMinutes(40).minusSeconds(14);
-		System.out.println(datetime2);
+		
 		long timestamp2 = datetime2.toInstant(ZoneOffset.UTC).toEpochMilli();
 
 		rService.insertOrUpdateMaxRange(timestamp2, 120.0f, "TestRec1", "OGN123456", null, 720);
@@ -63,7 +63,7 @@ public class StatsServiceTest {
 	@DirtiesContext
 	public void testAcriveReceiversCounter1() {
 		LocalDateTime datetime = LocalDateTime.of(2015, 8, 18, 16, 40, 15);
-		System.out.println(datetime);
+
 		long timestamp = datetime.toInstant(ZoneOffset.UTC).toEpochMilli();
 
 		long date = removeTime(timestamp);
@@ -78,7 +78,7 @@ public class StatsServiceTest {
 	@DirtiesContext
 	public void testReceivedBeaconsCounters() {
 		LocalDateTime datetime = LocalDateTime.of(2015, 8, 18, 16, 40, 15);
-		System.out.println(datetime);
+
 		long timestamp = datetime.toInstant(ZoneOffset.UTC).toEpochMilli();
 
 		long date = removeTime(timestamp);
@@ -110,7 +110,7 @@ public class StatsServiceTest {
 	public void testReceivedBeaxonsMaxAlt() {
 
 		LocalDateTime datetime = LocalDateTime.of(2015, 8, 18, 16, 40, 15);
-		System.out.println(datetime);
+
 		long timestamp = datetime.toInstant(ZoneOffset.UTC).toEpochMilli();
 
 		long date = removeTime(timestamp);
