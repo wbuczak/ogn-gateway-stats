@@ -1,5 +1,9 @@
 package org.ogn.gateway.plugin.stats.service;
 
 public interface StatsAircraftService {
-   // nothing yet here..
+
+	void insertOrUpdateUniqueAircraftReceivedCounter(long date, int counter);
+	
+	int getDistinctAircraftReceivedCounter(long date);
+	
 }

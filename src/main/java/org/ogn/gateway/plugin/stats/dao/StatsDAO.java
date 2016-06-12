@@ -11,7 +11,7 @@ public interface StatsDAO {
 
 	void insertOrReplaceMaxRange(long timestamp, float distance, String receiverName, String aircraftId,
 			String aircraftReg, float aircraftAlt);
-	
+
 	Map<String, Object> getMaxRange(long date, String receiverName);
 
 	List<Map<String, Object>> getTopMaxRanges(int limit);
@@ -34,11 +34,15 @@ public interface StatsDAO {
 
 	void insertOrReplaceReceptionCounter(long date, String receiverName, int counter);
 
+	void insertOrReplaceDistinctAircraftReceivedCounter(long date, int counter);
+
 	int getReceptionCounter(long date, String receiverName);
 
+	int getDistinctAircraftReceivedCounter(long date);
+
 	List<Map<String, Object>> getTopReceptionCounters(int limit);
-	
-	List<Map<String, Object>> getTopReceptionCounters(long date, int limit);	
+
+	List<Map<String, Object>> getTopReceptionCounters(long date, int limit);
 
 	// ##########################################################################
 	// ## MAX ALT

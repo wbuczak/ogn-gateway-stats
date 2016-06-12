@@ -20,13 +20,10 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = { "classpath:stats-application-context.xml" })
 @ActiveProfiles("TEST")
-public class StatsServiceTest {
+public class StatsReceiversServiceTest {
 
 	@Autowired
-	StatsReceiversService rService;
-
-	@Autowired
-	StatsAircraftService aService;
+	StatsReceiversService rService;	
 
 	@Test
 	@DirtiesContext

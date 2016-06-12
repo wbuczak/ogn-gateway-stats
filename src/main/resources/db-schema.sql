@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS OGN_MAX_RANGE(
 CREATE TABLE IF NOT EXISTS OGN_STATS(     
     date INTEGER NOT NULL,
     online_receivers INTEGER NOT NULL DEFAULT 0,    
+    unique_aircraft_ids NOT NULL DEFAULT 0,
     PRIMARY KEY (date)
 );
 
@@ -33,7 +34,8 @@ CREATE TABLE IF NOT EXISTS OGN_RECEIVER(
 CREATE VIEW IF NOT EXISTS OGN_STATS_V 
 AS SELECT 
     date(date/1000,'unixepoch','localtime') as date, 
-    online_receivers 
+    online_receivers,
+    unique_aircraft_ids    
 FROM OGN_STATS;
 
 CREATE VIEW IF NOT EXISTS OGN_MAX_RANGE_V 

@@ -163,6 +163,30 @@ public class StatsDaoTest {
 		assertEquals(1, dao.getTopReceptionCounters(1).size());
 		assertEquals(2, dao.getTopReceptionCounters(0).size());
 	}
+	
+	@Test
+	@DirtiesContext
+	public void testDailyDistinctAircraftBeaconsReceptionCounter() throws Exception {
+		long timestamp = datetime.toInstant(ZoneOffset.UTC).toEpochMilli();
+
+		long date = TimeDateUtils.removeTime(timestamp);
+
+		assertEquals(-1, dao.getDistinctAircraftReceivedCounter(date));
+		
+		dao.insertOrReplaceDistinctAircraftReceivedCounter(date, 20_000);
+		dao.insertOrReplaceDistinctAircraftReceivedCounter(date,30_000);
+
+		assertEquals(30_000, dao.getDistinctAircraftReceivedCounter(date));
+		
+		//next day
+		timestamp = datetime.plusDays(1).toInstant(ZoneOffset.UTC).toEpochMilli();
+		date = TimeDateUtils.removeTime(timestamp);
+
+		assertEquals(-1, dao.getDistinctAircraftReceivedCounter(date));
+		
+		dao.insertOrReplaceDistinctAircraftReceivedCounter(date, 100_111);
+		assertEquals(100_111, dao.getDistinctAircraftReceivedCounter(date));	
+	}
 
 	@Test
 	@DirtiesContext

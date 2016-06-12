@@ -43,8 +43,6 @@ public class TimeDateUtilsTest {
 		DateFormat df = DateFormat.getDateTimeInstance();
 		df.setTimeZone(TimeZone.getTimeZone("UTC"));
 
-		System.out.println(df.format(new Date(date)));
-
 		long date2 = TimeDateUtils.removeTime(date);
 
 		assertEquals(date2, date);

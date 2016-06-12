@@ -22,6 +22,7 @@ import org.ogn.commons.beacon.ReceiverBeacon;
 import org.ogn.commons.beacon.forwarder.OgnAircraftBeaconForwarder;
 import org.ogn.commons.beacon.forwarder.OgnReceiverBeaconForwarder;
 import org.ogn.commons.utils.AprsUtils;
+import org.ogn.gateway.plugin.stats.service.StatsAircraftService;
 import org.ogn.gateway.plugin.stats.service.StatsReceiversService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,10 +52,11 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 	private static ConcurrentMap<String, ReceiverBeacon> activeReceiversCache = new ConcurrentHashMap<>();
 	private static ConcurrentMap<String, AtomicInteger> dailyRecCounters = new ConcurrentHashMap<>();
 	private static ConcurrentMap<String, Object[]> dailyAltCache = new ConcurrentHashMap<>();
+	private static ConcurrentMap<String, Boolean> dailyUniqeAircratIds = new ConcurrentHashMap<>();
 
 	private ClassPathXmlApplicationContext ctx;
 
-	// private static StatsAircraftService aService;
+	private static StatsAircraftService aService;
 	private static StatsReceiversService rService;
 
 	private static Object syncMonitor = new Integer(1);
@@ -98,6 +100,8 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 			dailyRecCounters.clear();
 			LOG.info("cleaning daily altitudes cache");
 			dailyAltCache.clear();
+			LOG.info("cleaning daily unique aircraft id cache");
+			dailyUniqeAircratIds.clear();
 		}
 	}
 
@@ -125,6 +129,7 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 					ctx = new ClassPathXmlApplicationContext("classpath:stats-application-context.xml");
 					ctx.getEnvironment().setDefaultProfiles("PRO");
 					rService = ctx.getBean(StatsReceiversService.class);
+					aService = ctx.getBean(StatsAircraftService.class);
 					initialized = true;
 				} catch (Exception ex) {
 					LOG.error("context initialization failed", ex);
@@ -152,6 +157,9 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 
 						// clear activeReceivers cache
 						activeReceiversCache.clear();
+
+						aService.insertOrUpdateUniqueAircraftReceivedCounter(date, dailyUniqeAircratIds.size());
+
 					} catch (Exception ex) {
 						LOG.error("exception caught", ex);
 					}
@@ -174,6 +182,9 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 
 	@Override
 	public void onBeacon(AircraftBeacon beacon, AircraftDescriptor descriptor) {
+
+		// remember that this aircraft has been received
+		dailyUniqeAircratIds.putIfAbsent(beacon.getId(), true);
 
 		// counters..
 		if (!dailyRecCounters.containsKey(beacon.getReceiverName()))
@@ -207,6 +218,8 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 			float range = (float) AprsUtils.calcDistanceInKm(beacon,
 					activeReceiversCache.get(beacon.getReceiverName()));
 
+			// TODO: this should not be done on-beacon(!) - risk of too much I/O with the backend db
+			// Change an update in the periodic job only (once per 5-6min is enough...)
 			if (range >= MIN_RANGE && range < MAX_RANGE) {
 				rService.insertOrUpdateMaxRange(beacon.getTimestamp(), range, beacon.getReceiverName(), beacon.getId(),
 						descriptor.getRegNumber(), beacon.getAlt());

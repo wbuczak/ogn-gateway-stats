@@ -319,4 +319,26 @@ public class SpringStatsDAO implements StatsDAO {
 		jdbcTemplate.update(sql.toString(), date, receiverName, aircraftAlt, aircraftId, aircraftReg, timestamp);
 	}
 
+	@Override
+	public void insertOrReplaceDistinctAircraftReceivedCounter(long date, int counter) {		
+		final String sql = "insert or replace into OGN_STATS(date, unique_aircraft_ids) values(?,?)";
+		jdbcTemplate.update(sql, date, counter);
+		
+	}
+
+	@Override
+	public int getDistinctAircraftReceivedCounter(long date) {	
+		final String sql = "select unique_aircraft_ids from OGN_STATS where date=?";
+
+		Integer result = -1;
+		try {
+			result = jdbcTemplate.queryForObject(sql, Integer.class, date);
+		} catch (EmptyResultDataAccessException ex) {
+			// still null ;-)
+			result = -1;
+		}
+
+		return result;
+	}
+
 }
