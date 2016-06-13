@@ -8,14 +8,13 @@ import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.ogn.gateway.plugin.stats.dao.StatsDAO;
-import org.ogn.gateway.plugin.stats.service.StatsReceiversService;
+import org.ogn.gateway.plugin.stats.service.StatsService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-public class StatsReceiversServiceImpl implements StatsReceiversService {
+public class StatsServiceImpl implements StatsService {
 
 	protected StatsDAO dao;
 
@@ -37,13 +36,6 @@ public class StatsReceiversServiceImpl implements StatsReceiversService {
 		if (null == rec || (float) rec.get("range") < range) {
 			dao.insertOrReplaceMaxRange(timestamp, range, receiverName, aircraftId, aircraftReg, aircraftAlt);
 		}
-	}
-
-	@Override
-	@Transactional
-	@CacheEvict("activeRecCounterCache")
-	public void insertOrUpdateActiveReceiversCounter(long date, int count) {
-		dao.insertOrReplaceActiveReceiversCounter(date, count);
 	}
 
 	@Override
@@ -77,19 +69,13 @@ public class StatsReceiversServiceImpl implements StatsReceiversService {
 
 	@Override
 	@Transactional(readOnly = true)
-	public List<Map<String, Object>> getActiveReceiversCounters(int days) {
-		return dao.getActiveReceiversCounters(days);
-	}
-
-	@Override
-	@Transactional(readOnly = true)
 	public Map<String, Object> getMaxRange(long date, String receiverName) {
 		return dao.getMaxRange(date, receiverName);
 	}
 
 	@Override
 	@Transactional(readOnly = true)
-	public double getMaxAlt(long date, String receiverName) {
+	public float getMaxAlt(long date, String receiverName) {
 		return dao.getMaxAlt(date, receiverName);
 	}
 
@@ -127,6 +113,29 @@ public class StatsReceiversServiceImpl implements StatsReceiversService {
 	@Transactional(readOnly = true)
 	public List<Map<String, Object>> getTopMaxRanges(long date, int limit) {
 		return dao.getTopMaxRanges(date, limit);
+	}
+
+	@Override
+	@Transactional
+	public void insertOrReplaceDailyStats(long date, int activeReceivers, int distinctAircraftIds) {
+		int dbActiveReceivers = dao.getActiveReceiversCounter(date);
+		int dbAircraftIds = dao.getDistinctAircraftReceivedCounter(date);
+
+		int updateReceivers = activeReceivers > dbActiveReceivers ? activeReceivers : dbActiveReceivers;
+		int updateAircraftIds = distinctAircraftIds > dbAircraftIds ? distinctAircraftIds : dbAircraftIds;
+
+		dao.insertOrReplaceDailyStats(date, updateReceivers, updateAircraftIds);
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public List<Map<String, Object>> getDailyStatsForDays(int days) {
+		return dao.getDailyStatsForDays(days);
+	}
+
+	@Override
+	public int getDistinctAircraftReceivedCounter(long date) {
+		return dao.getDistinctAircraftReceivedCounter(date);
 	}
 
 }

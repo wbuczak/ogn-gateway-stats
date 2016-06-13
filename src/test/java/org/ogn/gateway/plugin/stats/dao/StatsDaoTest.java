@@ -58,43 +58,46 @@ public class StatsDaoTest {
 
 	@Test
 	@DirtiesContext
-	public void testActiveReceiversCounter1() throws Exception {
+	public void testInsertingStatsRecord1() throws Exception {
 		long timestamp = datetime.toInstant(ZoneOffset.UTC).toEpochMilli();
 		long date = TimeDateUtils.removeTime(timestamp);
 		assertEquals(-1, dao.getActiveReceiversCounter(date));
-		dao.insertOrReplaceActiveReceiversCounter(date, 100);
-		assertEquals(100, dao.getActiveReceiversCounter(date));
-		dao.insertOrReplaceActiveReceiversCounter(date, 101);
-		assertEquals(101, dao.getActiveReceiversCounter(date));
+		dao.insertOrReplaceDailyStats(date, 55, 100);
+		assertEquals(55, dao.getActiveReceiversCounter(date));
+		dao.insertOrReplaceDailyStats(date, 56, 101);
+		assertEquals(56, dao.getActiveReceiversCounter(date));
+		assertEquals(101, dao.getDistinctAircraftReceivedCounter(date));
 	}
 
 	@Test
 	@DirtiesContext
-	public void testActiveReceiversCounter2() throws Exception {
+	public void testInsertingStatsRecord2() throws Exception {
 		long timestamp = datetime.toInstant(ZoneOffset.UTC).toEpochMilli();
 
 		long date = TimeDateUtils.removeTime(timestamp);
-		dao.insertOrReplaceActiveReceiversCounter(date, 100);
+		dao.insertOrReplaceDailyStats(date, 15, 100);
 
 		LocalDateTime datetime2 = datetime.plusDays(1); // 19
 
-		dao.insertOrReplaceActiveReceiversCounter(
-				TimeDateUtils.removeTime(datetime2.toInstant(ZoneOffset.UTC).toEpochMilli()), 102);
+		dao.insertOrReplaceDailyStats(TimeDateUtils.removeTime(datetime2.toInstant(ZoneOffset.UTC).toEpochMilli()),
+				25, 102);
 
 		datetime2 = datetime2.plusDays(1); // 20
-		dao.insertOrReplaceActiveReceiversCounter(
-				TimeDateUtils.removeTime(datetime2.toInstant(ZoneOffset.UTC).toEpochMilli()), 98);
+		dao.insertOrReplaceDailyStats(TimeDateUtils.removeTime(datetime2.toInstant(ZoneOffset.UTC).toEpochMilli()),
+				25, 98);
 
 		datetime2 = datetime2.plusDays(1); // 21
-		dao.insertOrReplaceActiveReceiversCounter(
-				TimeDateUtils.removeTime(datetime2.toInstant(ZoneOffset.UTC).toEpochMilli()), 99);
+		date = TimeDateUtils.removeTime(datetime2.toInstant(ZoneOffset.UTC).toEpochMilli());
+		dao.insertOrReplaceDailyStats(date, 45, 99);
+		dao.insertOrReplaceDailyStats(date, 48, 55);
 
-		List<Map<String, Object>> records = dao.getActiveReceiversCounters(10);
+		List<Map<String, Object>> records = dao.getDailyStatsForDays(10);
 		assertNotNull(records);
 		assertEquals(4, records.size());
 
 		Map<String, Object> r1 = records.get(0);
-		assertEquals(99, r1.get("count"));
+		assertEquals(48, r1.get("online_receivers"));
+		assertEquals(55, r1.get("unique_aircraft_ids"));
 	}
 
 	@Test
@@ -163,7 +166,7 @@ public class StatsDaoTest {
 		assertEquals(1, dao.getTopReceptionCounters(1).size());
 		assertEquals(2, dao.getTopReceptionCounters(0).size());
 	}
-	
+
 	@Test
 	@DirtiesContext
 	public void testDailyDistinctAircraftBeaconsReceptionCounter() throws Exception {
@@ -172,20 +175,20 @@ public class StatsDaoTest {
 		long date = TimeDateUtils.removeTime(timestamp);
 
 		assertEquals(-1, dao.getDistinctAircraftReceivedCounter(date));
-		
-		dao.insertOrReplaceDistinctAircraftReceivedCounter(date, 20_000);
-		dao.insertOrReplaceDistinctAircraftReceivedCounter(date,30_000);
+
+		dao.insertOrReplaceDailyStats(date, 45, 20_000);
+		dao.insertOrReplaceDailyStats(date, 46, 30_000);
 
 		assertEquals(30_000, dao.getDistinctAircraftReceivedCounter(date));
-		
-		//next day
+
+		// next day
 		timestamp = datetime.plusDays(1).toInstant(ZoneOffset.UTC).toEpochMilli();
 		date = TimeDateUtils.removeTime(timestamp);
 
 		assertEquals(-1, dao.getDistinctAircraftReceivedCounter(date));
-		
-		dao.insertOrReplaceDistinctAircraftReceivedCounter(date, 100_111);
-		assertEquals(100_111, dao.getDistinctAircraftReceivedCounter(date));	
+
+		dao.insertOrReplaceDailyStats(date, 120, 100_111);
+		assertEquals(100_111, dao.getDistinctAircraftReceivedCounter(date));
 	}
 
 	@Test
@@ -195,14 +198,14 @@ public class StatsDaoTest {
 
 		long date = TimeDateUtils.removeTime(timestamp);
 
-		//assertFalse(dao.isReceiverRegistered(date, "TestRec1"));
+		// assertFalse(dao.isReceiverRegistered(date, "TestRec1"));
 
 		assertEquals(Float.NaN, dao.getMaxAlt(date, "TestRec1"), 1e-10);
 
 		dao.insertOrReplaceMaxAlt(timestamp, "TestRec1", "343430", null, 2500);
 		dao.insertOrReplaceMaxAlt(timestamp + 30, "TestRec2", "544334", "A-BCD", 4500.5f);
 
-		//assertTrue(dao.isReceiverRegistered(date, "TestRec1"));
+		// assertTrue(dao.isReceiverRegistered(date, "TestRec1"));
 
 		assertEquals(2500f, dao.getMaxAlt(date, "TestRec1"), 1e-10);
 		assertEquals(4500.5f, dao.getMaxAlt(date, "TestRec2"), 1e-10);

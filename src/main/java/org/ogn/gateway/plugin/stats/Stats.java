@@ -22,8 +22,7 @@ import org.ogn.commons.beacon.ReceiverBeacon;
 import org.ogn.commons.beacon.forwarder.OgnAircraftBeaconForwarder;
 import org.ogn.commons.beacon.forwarder.OgnReceiverBeaconForwarder;
 import org.ogn.commons.utils.AprsUtils;
-import org.ogn.gateway.plugin.stats.service.StatsAircraftService;
-import org.ogn.gateway.plugin.stats.service.StatsReceiversService;
+import org.ogn.gateway.plugin.stats.service.StatsService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
@@ -56,8 +55,7 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 
 	private ClassPathXmlApplicationContext ctx;
 
-	private static StatsAircraftService aService;
-	private static StatsReceiversService rService;
+	private static StatsService service;
 
 	private static Object syncMonitor = new Integer(1);
 	private static volatile boolean initialized = false;
@@ -93,16 +91,21 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 			return dailyAltCache;
 		}
 
-		// clean the daily caches (1 sec after midnight)
-		@Scheduled(cron = "1 0 0 * * ?")
-		public void cleanDailyCaches() {
-			LOG.info("cleaning daily receiver reception counters");
-			dailyRecCounters.clear();
-			LOG.info("cleaning daily altitudes cache");
-			dailyAltCache.clear();
-			LOG.info("cleaning daily unique aircraft id cache");
-			dailyUniqeAircratIds.clear();
+		@ManagedAttribute
+		public int getDailyUniqeAircratIdsCounter() {
+			return dailyUniqeAircratIds.size();
 		}
+	}
+
+	// clean the daily caches (1 sec after midnight)
+	@Scheduled(cron = "1 0 0 * * ?")
+	public void cleanDailyCaches() {
+		LOG.info("cleaning daily receiver reception counters");
+		dailyRecCounters.clear();
+		LOG.info("cleaning daily altitudes cache");
+		dailyAltCache.clear();
+		LOG.info("cleaning daily unique aircraft id cache");
+		dailyUniqeAircratIds.clear();
 	}
 
 	@Override
@@ -128,8 +131,7 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 				try {
 					ctx = new ClassPathXmlApplicationContext("classpath:stats-application-context.xml");
 					ctx.getEnvironment().setDefaultProfiles("PRO");
-					rService = ctx.getBean(StatsReceiversService.class);
-					aService = ctx.getBean(StatsAircraftService.class);
+					service = ctx.getBean(StatsService.class);
 					initialized = true;
 				} catch (Exception ex) {
 					LOG.error("context initialization failed", ex);
@@ -142,23 +144,25 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 						long date = TimeDateUtils.removeTime(System.currentTimeMillis());
 
 						LOG.debug("current activeReceiversCache size: {}", activeReceiversCache.size());
-						rService.insertOrUpdateActiveReceiversCounter(date, activeReceiversCache.size());
+						LOG.debug("current dailyUniqeAircratIds size: {}", dailyUniqeAircratIds.size());
+
+						service.insertOrReplaceDailyStats(date, activeReceiversCache.size(),
+								dailyUniqeAircratIds.size());
+
 						LOG.debug("current daily receiver counter's cache size: {}", dailyRecCounters.size());
-						rService.insertOrUpdateReceptionCounters(date, dailyRecCounters);
+						service.insertOrUpdateReceptionCounters(date, dailyRecCounters);
 						LOG.debug("current daily receiver max-alt cache size: {}", dailyAltCache.size());
 
 						for (Entry<String, Object[]> entry : dailyAltCache.entrySet()) {
 							fReadLock.lock();
 							Object[] maxAltAircraft = entry.getValue();
-							rService.insertOrUpdateMaxAlt((long) maxAltAircraft[3], entry.getKey(),
+							service.insertOrUpdateMaxAlt((long) maxAltAircraft[3], entry.getKey(),
 									(String) maxAltAircraft[0], (String) maxAltAircraft[1], (float) maxAltAircraft[2]);
 							fReadLock.unlock();
 						}
 
 						// clear activeReceivers cache
 						activeReceiversCache.clear();
-
-						aService.insertOrUpdateUniqueAircraftReceivedCounter(date, dailyUniqeAircratIds.size());
 
 					} catch (Exception ex) {
 						LOG.error("exception caught", ex);
@@ -221,7 +225,7 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 			// TODO: this should not be done on-beacon(!) - risk of too much I/O with the backend db
 			// Change an update in the periodic job only (once per 5-6min is enough...)
 			if (range >= MIN_RANGE && range < MAX_RANGE) {
-				rService.insertOrUpdateMaxRange(beacon.getTimestamp(), range, beacon.getReceiverName(), beacon.getId(),
+				service.insertOrUpdateMaxRange(beacon.getTimestamp(), range, beacon.getReceiverName(), beacon.getId(),
 						descriptor.getRegNumber(), beacon.getAlt());
 			}
 

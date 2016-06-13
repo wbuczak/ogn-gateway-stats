@@ -19,14 +19,16 @@ public interface StatsDAO {
 	List<Map<String, Object>> getTopMaxRanges(long date, int limit);
 
 	// ##########################################################################
-	// ## ACTIVE RECEIVERS
+	// ## DAILY STATS
 	// ##########################################################################
 
-	void insertOrReplaceActiveReceiversCounter(long date, int count);
+	void insertOrReplaceDailyStats(long date, int activeReceivers, int distinctArcraftIds);
+
+	List<Map<String, Object>> getDailyStatsForDays(int days);
 
 	int getActiveReceiversCounter(long date);
 
-	List<Map<String, Object>> getActiveReceiversCounters(int days);
+	int getDistinctAircraftReceivedCounter(long date);
 
 	// ##########################################################################
 	// ## AIRCRAFT BEACONS RECEPTION
@@ -34,11 +36,7 @@ public interface StatsDAO {
 
 	void insertOrReplaceReceptionCounter(long date, String receiverName, int counter);
 
-	void insertOrReplaceDistinctAircraftReceivedCounter(long date, int counter);
-
 	int getReceptionCounter(long date, String receiverName);
-
-	int getDistinctAircraftReceivedCounter(long date);
 
 	List<Map<String, Object>> getTopReceptionCounters(int limit);
 

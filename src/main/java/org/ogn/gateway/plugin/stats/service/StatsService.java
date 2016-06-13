@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author wbuczak
  *
  */
-public interface StatsReceiversService {
+public interface StatsService {
 
 	// ##########################################################################
 	// ## MAX RANGE
@@ -22,18 +22,20 @@ public interface StatsReceiversService {
 	Map<String, Object> getMaxRange(long removeTime, String string);
 
 	List<Map<String, Object>> getTopMaxRanges(int limit);
-	
+
 	List<Map<String, Object>> getTopMaxRanges(long date, int limit);
-	
+
 	// ##########################################################################
-	// ## ACTIVE RECEIVERS
+	// ## DAILY STATS
 	// ##########################################################################
 
-	void insertOrUpdateActiveReceiversCounter(long date, int count);
+	void insertOrReplaceDailyStats(long date, int activeReceivers, int distinctArcraftIds);
+
+	List<Map<String, Object>> getDailyStatsForDays(int days);
 
 	int getActiveReceiversCounter(long date);
 
-	List<Map<String, Object>> getActiveReceiversCounters(int days);
+	int getDistinctAircraftReceivedCounter(long date);
 
 	// ##########################################################################
 	// ## AIRCRAFT BEACONS RECEPTION
@@ -42,7 +44,7 @@ public interface StatsReceiversService {
 	void insertOrUpdateReceptionCounters(long date, Map<String, AtomicInteger> counters);
 
 	int getReceptionCounter(long date, String receiverName);
-	
+
 	List<Map<String, Object>> getTopReceptionCounters(int limit);
 
 	List<Map<String, Object>> getTopReceptionCounters(long date, int limit);
@@ -54,7 +56,8 @@ public interface StatsReceiversService {
 	void insertOrUpdateMaxAlt(long timestamp, String receiverName, String aircraftId, String aircraftReg,
 			float aircraftAlt);
 
-	double getMaxAlt(long date, String receiverName);
-	
+	float getMaxAlt(long date, String receiverName);
+
 	List<Map<String, Object>> getMaxAlts(long date, int limit);
+
 }

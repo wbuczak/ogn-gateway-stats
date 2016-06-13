@@ -71,14 +71,8 @@ public class SpringStatsDAO implements StatsDAO {
 	}
 
 	@Override
-	public void insertOrReplaceActiveReceiversCounter(long date, int count) {
-		final String sql = "insert or replace into OGN_STATS(date, online_receivers) values(?,?)";
-		jdbcTemplate.update(sql, date, count);
-	}
-
-	@Override
 	public int getActiveReceiversCounter(long date) {
-		final String sql = "select online_receivers from OGN_STATS where date=?";
+		final String sql = "select online_receivers from OGN_DAILY_STATS where date=?";
 
 		Integer result = -1;
 		try {
@@ -157,10 +151,10 @@ public class SpringStatsDAO implements StatsDAO {
 	}
 
 	@Override
-	public List<Map<String, Object>> getActiveReceiversCounters(int days) {
+	public List<Map<String, Object>> getDailyStatsForDays(int days) {
 
 		Object[] args = null;
-		StringBuilder sql = new StringBuilder("select * from OGN_STATS order by date desc");
+		StringBuilder sql = new StringBuilder("select * from OGN_DAILY_STATS order by date desc");
 
 		if (days == 0) {
 			args = new Object[0];
@@ -175,7 +169,8 @@ public class SpringStatsDAO implements StatsDAO {
 			public Map<String, Object> mapRow(ResultSet rs, int arg1) throws SQLException {
 
 				Map<String, Object> rec = new HashMap<>();
-				rec.put("count", rs.getInt("online_receivers"));
+				rec.put("online_receivers", rs.getInt("online_receivers"));
+				rec.put("unique_aircraft_ids", rs.getInt("unique_aircraft_ids"));
 				rec.put("date", rs.getLong("date"));
 				return rec;
 			}
@@ -320,15 +315,14 @@ public class SpringStatsDAO implements StatsDAO {
 	}
 
 	@Override
-	public void insertOrReplaceDistinctAircraftReceivedCounter(long date, int counter) {		
-		final String sql = "insert or replace into OGN_STATS(date, unique_aircraft_ids) values(?,?)";
-		jdbcTemplate.update(sql, date, counter);
-		
+	public void insertOrReplaceDailyStats(long date, int activeReceivers, int distinctArcraftIds) {
+		final String sql = "insert or replace into OGN_DAILY_STATS(date, online_receivers, unique_aircraft_ids) values(?,?,?)";
+		jdbcTemplate.update(sql, date, activeReceivers, distinctArcraftIds);
 	}
 
 	@Override
-	public int getDistinctAircraftReceivedCounter(long date) {	
-		final String sql = "select unique_aircraft_ids from OGN_STATS where date=?";
+	public int getDistinctAircraftReceivedCounter(long date) {
+		final String sql = "select unique_aircraft_ids from OGN_DAILY_STATS where date=?";
 
 		Integer result = -1;
 		try {
