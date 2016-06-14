@@ -181,8 +181,11 @@ public class SpringStatsDAO implements StatsDAO {
 
 	@Override
 	public void insertOrReplaceReceptionCounter(long date, String receiverName, int count) {
-		final String sql = "insert or replace into OGN_RECEIVER(date, receiver_name, beacons_received) values(?,?,?)";
-		jdbcTemplate.update(sql, date, receiverName, count);
+		final String sql = "insert or ignore into OGN_RECEIVER(date,receiver_name) values(?,?)";
+		jdbcTemplate.update(sql.toString(), date, receiverName);
+
+		final String sql2 = "update OGN_RECEIVER set beacons_received=? where date=? and receiver_name=?";
+		jdbcTemplate.update(sql2, count, date, receiverName);
 	}
 
 	@Override
@@ -307,17 +310,25 @@ public class SpringStatsDAO implements StatsDAO {
 	@Override
 	public void insertOrReplaceMaxAlt(long timestamp, String receiverName, String aircraftId, String aircraftReg,
 			float aircraftAlt) {
-		final StringBuilder sql = new StringBuilder("insert or replace into OGN_RECEIVER(")
-				.append("date, receiver_name, max_alt, max_alt_aircraft_id, max_alt_aircraft_reg, max_alt_timestamp)")
-				.append(" values(?,?,?,?,?,?)");
+
+		String sql = "insert or ignore into OGN_RECEIVER(date,receiver_name) values(?,?)";
+
 		long date = removeTime(timestamp);
-		jdbcTemplate.update(sql.toString(), date, receiverName, aircraftAlt, aircraftId, aircraftReg, timestamp);
+		jdbcTemplate.update(sql.toString(), date, receiverName);
+
+		StringBuilder sql2 = new StringBuilder(
+				"update OGN_RECEIVER set max_alt=?, max_alt_aircraft_id=?, max_alt_aircraft_reg=?, max_alt_timestamp=? ")
+						.append("where date=? and receiver_name=?");
+
+		jdbcTemplate.update(sql2.toString(), aircraftAlt, aircraftId, aircraftReg, timestamp, date, receiverName);
 	}
 
 	@Override
 	public void insertOrReplaceDailyStats(long date, int activeReceivers, int distinctArcraftIds) {
-		final String sql = "insert or replace into OGN_DAILY_STATS(date, online_receivers, unique_aircraft_ids) values(?,?,?)";
-		jdbcTemplate.update(sql, date, activeReceivers, distinctArcraftIds);
+		final String sql = "insert or ignore into OGN_DAILY_STATS(date) values(?)";
+		jdbcTemplate.update(sql, date);
+		final String sql2 = "update OGN_DAILY_STATS set online_receivers=?, unique_aircraft_ids=? where date=?";
+		jdbcTemplate.update(sql2, activeReceivers, distinctArcraftIds, date);
 	}
 
 	@Override

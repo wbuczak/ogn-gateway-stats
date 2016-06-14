@@ -31,7 +31,6 @@ public class StatsDaoTest {
 	@DirtiesContext
 	public void testInsertOrReplaceRange1() throws Exception {
 		long timestamp = datetime.toInstant(ZoneOffset.UTC).toEpochMilli();
-
 		dao.insertOrReplaceMaxRange(timestamp, 58.23f, "TestRec1", "OGN123456", null, 1250);
 		dao.insertOrReplaceMaxRange(timestamp + 2 * 3600 * 1000 + 150, 58.23f, "TestRec1", "OGN123456", null, 1643);
 		int records = dao.getTopMaxRanges(TimeDateUtils.removeTime(timestamp), 10).size();

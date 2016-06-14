@@ -8,7 +8,6 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.ogn.commons.beacon.AircraftBeacon;
-import org.ogn.gateway.plugin.stats.Stats;
 
 /**
  * Copyright (c) 2015 OGN, All Rights Reserved.
@@ -20,7 +19,7 @@ public class StatsTest {
 
 	@Mock
 	AircraftBeacon b1 = null;
-
+ 
 	@Mock
 	AircraftBeacon b2 = null;
 

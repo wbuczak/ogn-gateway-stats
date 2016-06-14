@@ -4,6 +4,8 @@ t * Copyright (c) 2015 OGN, All Rights Reserved.
 
 package org.ogn.gateway.plugin.stats;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
@@ -49,9 +51,11 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 	private static final float MAX_ALT = 15000; // discard everything above that
 
 	private static ConcurrentMap<String, ReceiverBeacon> activeReceiversCache = new ConcurrentHashMap<>();
+	private static List<Object[]> maxRangeCache = new LinkedList<>();
+
 	private static ConcurrentMap<String, AtomicInteger> dailyRecCounters = new ConcurrentHashMap<>();
 	private static ConcurrentMap<String, Object[]> dailyAltCache = new ConcurrentHashMap<>();
-	private static ConcurrentMap<String, Boolean> dailyUniqeAircratIds = new ConcurrentHashMap<>();
+	private static ConcurrentMap<String, Boolean> dailyDistinctAircratIds = new ConcurrentHashMap<>();
 
 	private ClassPathXmlApplicationContext ctx;
 
@@ -63,9 +67,13 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 	private static Future<?> receiversCountFuture;
 	private static ScheduledExecutorService scheduler;
 
-	private final ReentrantReadWriteLock fLock = new ReentrantReadWriteLock();
-	private final Lock fReadLock = fLock.readLock();
-	private final Lock fWriteLock = fLock.writeLock();
+	private final ReentrantReadWriteLock maxAltLock = new ReentrantReadWriteLock();
+	private final Lock maxAltReadLock = maxAltLock.readLock();
+	private final Lock maxAltWriteLock = maxAltLock.writeLock();
+
+	private final ReentrantReadWriteLock maxRangeLock = new ReentrantReadWriteLock();
+	private final Lock maxRangeReadLock = maxRangeLock.readLock();
+	private final Lock maxRangeWriteLock = maxRangeLock.writeLock();
 
 	@Service
 	@ManagedResource(objectName = "org.ogn.gateway.plugin.stats:name=Stats", description = "OGN gateway statistics collector plugin")
@@ -92,8 +100,13 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 		}
 
 		@ManagedAttribute
-		public int getDailyUniqeAircratIdsCounter() {
-			return dailyUniqeAircratIds.size();
+		public int getDailyDistinctAircratIdsCounter() {
+			return dailyDistinctAircratIds.size();
+		}
+
+		@ManagedAttribute
+		public int getMaxRangeCacheSize() {
+			return maxRangeCache.size();
 		}
 	}
 
@@ -104,8 +117,8 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 		dailyRecCounters.clear();
 		LOG.info("cleaning daily altitudes cache");
 		dailyAltCache.clear();
-		LOG.info("cleaning daily unique aircraft id cache");
-		dailyUniqeAircratIds.clear();
+		LOG.info("cleaning daily distinct aircraft id cache");
+		dailyDistinctAircratIds.clear();
 	}
 
 	@Override
@@ -144,25 +157,34 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 						long date = TimeDateUtils.removeTime(System.currentTimeMillis());
 
 						LOG.debug("current activeReceiversCache size: {}", activeReceiversCache.size());
-						LOG.debug("current dailyUniqeAircratIds size: {}", dailyUniqeAircratIds.size());
+						LOG.debug("current dailyDistinctAircratIds size: {}", dailyDistinctAircratIds.size());
 
 						service.insertOrReplaceDailyStats(date, activeReceiversCache.size(),
-								dailyUniqeAircratIds.size());
+								dailyDistinctAircratIds.size());
 
 						LOG.debug("current daily receiver counter's cache size: {}", dailyRecCounters.size());
 						service.insertOrUpdateReceptionCounters(date, dailyRecCounters);
 						LOG.debug("current daily receiver max-alt cache size: {}", dailyAltCache.size());
 
 						for (Entry<String, Object[]> entry : dailyAltCache.entrySet()) {
-							fReadLock.lock();
+							maxAltReadLock.lock();
 							Object[] maxAltAircraft = entry.getValue();
 							service.insertOrUpdateMaxAlt((long) maxAltAircraft[3], entry.getKey(),
 									(String) maxAltAircraft[0], (String) maxAltAircraft[1], (float) maxAltAircraft[2]);
-							fReadLock.unlock();
+							maxAltReadLock.unlock();
 						}
 
 						// clear activeReceivers cache
 						activeReceiversCache.clear();
+
+						maxRangeReadLock.lock();
+						for (Object[] entry : maxRangeCache) {
+							service.insertOrUpdateMaxRange((Long) entry[0], (Float) entry[1], (String) entry[2],
+									(String) entry[3], (String) entry[4], (Float) entry[5]);
+						}
+						// clear max range cache
+						maxRangeCache.clear();
+						maxRangeReadLock.unlock();
 
 					} catch (Exception ex) {
 						LOG.error("exception caught", ex);
@@ -188,12 +210,10 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 	public void onBeacon(AircraftBeacon beacon, AircraftDescriptor descriptor) {
 
 		// remember that this aircraft has been received
-		dailyUniqeAircratIds.putIfAbsent(beacon.getId(), true);
+		dailyDistinctAircratIds.putIfAbsent(beacon.getId(), true);
 
 		// counters..
-		if (!dailyRecCounters.containsKey(beacon.getReceiverName()))
-			dailyRecCounters.put(beacon.getReceiverName(), new AtomicInteger(1));
-		else
+		if (dailyRecCounters.putIfAbsent(beacon.getReceiverName(), new AtomicInteger(1)) != null)
 			dailyRecCounters.get(beacon.getReceiverName()).incrementAndGet();
 
 		if (beacon.getAlt() < MAX_ALT)
@@ -203,15 +223,15 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 				maxAltAircraft[1] = descriptor.getRegNumber();
 				maxAltAircraft[2] = beacon.getAlt();
 				maxAltAircraft[3] = beacon.getTimestamp();
-				fWriteLock.lock();
+				maxAltWriteLock.lock();
 				dailyAltCache.put(beacon.getReceiverName(), maxAltAircraft);
-				fWriteLock.unlock();
+				maxAltWriteLock.unlock();
 			} else {
 				Object[] maxAltAircraft = dailyAltCache.get(beacon.getReceiverName());
 				if ((float) maxAltAircraft[2] < beacon.getAlt()) {
-					fWriteLock.lock();
+					maxAltWriteLock.lock();
 					maxAltAircraft[2] = beacon.getAlt();
-					fWriteLock.unlock();
+					maxAltWriteLock.unlock();
 				}
 			}
 
@@ -222,11 +242,11 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 			float range = (float) AprsUtils.calcDistanceInKm(beacon,
 					activeReceiversCache.get(beacon.getReceiverName()));
 
-			// TODO: this should not be done on-beacon(!) - risk of too much I/O with the backend db
-			// Change an update in the periodic job only (once per 5-6min is enough...)
 			if (range >= MIN_RANGE && range < MAX_RANGE) {
-				service.insertOrUpdateMaxRange(beacon.getTimestamp(), range, beacon.getReceiverName(), beacon.getId(),
-						descriptor.getRegNumber(), beacon.getAlt());
+				maxRangeWriteLock.lock();
+				maxRangeCache.add(new Object[] { beacon.getTimestamp(), range, beacon.getReceiverName(), beacon.getId(),
+						descriptor.getRegNumber(), beacon.getAlt() });
+				maxRangeWriteLock.unlock();
 			}
 
 		} // if
