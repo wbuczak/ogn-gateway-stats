@@ -134,6 +134,7 @@ public class StatsServiceImpl implements StatsService {
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public int getDistinctAircraftReceivedCounter(long date) {
 		return dao.getDistinctAircraftReceivedCounter(date);
 	}
