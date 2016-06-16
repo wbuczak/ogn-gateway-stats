@@ -108,18 +108,21 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 		public int getMaxRangeCacheSize() {
 			return maxRangeCache.size();
 		}
+		
+			
+		// clean the daily caches (1 sec after midnight)
+		@Scheduled(cron = "1 0 0 * * ?")
+		public void cleanDailyCaches() {
+			LOG.info("cleaning daily receiver reception counters");
+			dailyRecCounters.clear();
+			LOG.info("cleaning daily altitudes cache");
+			dailyAltCache.clear();
+			LOG.info("cleaning daily distinct aircraft id cache");
+			dailyDistinctAircratIds.clear();
+		}
 	}
 
-	// clean the daily caches (1 sec after midnight)
-	@Scheduled(cron = "1 0 0 * * ?")
-	public void cleanDailyCaches() {
-		LOG.info("cleaning daily receiver reception counters");
-		dailyRecCounters.clear();
-		LOG.info("cleaning daily altitudes cache");
-		dailyAltCache.clear();
-		LOG.info("cleaning daily distinct aircraft id cache");
-		dailyDistinctAircratIds.clear();
-	}
+	
 
 	@Override
 	public String getName() {
