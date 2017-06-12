@@ -28,7 +28,7 @@ public class SpringStatsDAO implements StatsDAO {
 	}
 
 	@Override
-	public void insertOrReplaceMaxRange(long timestamp, float distance, String receiverName, String aircraftId,
+	public void upsertMaxRange(long timestamp, float distance, String receiverName, String aircraftId,
 			String aircraftReg, float aircraftAlt) {
 		long date = removeTime(timestamp);
 		final StringBuilder sql = new StringBuilder(
@@ -62,7 +62,7 @@ public class SpringStatsDAO implements StatsDAO {
 		Map<String, Object> result = null;
 
 		try {
-			result = jdbcTemplate.queryForObject(sql, mapper, new Object[] { date, receiverName });
+			result = jdbcTemplate.queryForObject(sql, mapper, new Object[]{date, receiverName});
 		} catch (EmptyResultDataAccessException ex) {
 			result = null;
 		}
@@ -97,7 +97,7 @@ public class SpringStatsDAO implements StatsDAO {
 			args = new Object[0];
 		} else {
 			sql.append(" limit ?");
-			args = new Object[] { limit };
+			args = new Object[]{limit};
 		}
 
 		RowMapper<Map<String, Object>> mapper = new RowMapper<Map<String, Object>>() {
@@ -126,10 +126,10 @@ public class SpringStatsDAO implements StatsDAO {
 		StringBuilder sql = new StringBuilder("select * from OGN_MAX_RANGE where date=? order by range desc");
 
 		if (limit == 0) {
-			args = new Object[] { date };
+			args = new Object[]{date};
 		} else {
 			sql.append(" limit ?");
-			args = new Object[] { date, limit };
+			args = new Object[]{date, limit};
 		}
 
 		RowMapper<Map<String, Object>> mapper = new RowMapper<Map<String, Object>>() {
@@ -160,7 +160,7 @@ public class SpringStatsDAO implements StatsDAO {
 			args = new Object[0];
 		} else {
 			sql.append(" limit ?");
-			args = new Object[] { days };
+			args = new Object[]{days};
 		}
 
 		RowMapper<Map<String, Object>> mapper = new RowMapper<Map<String, Object>>() {
@@ -180,7 +180,7 @@ public class SpringStatsDAO implements StatsDAO {
 	}
 
 	@Override
-	public void insertOrReplaceReceptionCounter(long date, String receiverName, int count) {
+	public void upsertReceptionCounter(long date, String receiverName, int count) {
 		final String sql = "insert or ignore into OGN_RECEIVER(date,receiver_name) values(?,?)";
 		jdbcTemplate.update(sql.toString(), date, receiverName);
 
@@ -212,7 +212,7 @@ public class SpringStatsDAO implements StatsDAO {
 			args = new Object[0];
 		} else {
 			sql.append(" limit ?");
-			args = new Object[] { limit };
+			args = new Object[]{limit};
 		}
 
 		RowMapper<Map<String, Object>> mapper = new RowMapper<Map<String, Object>>() {
@@ -237,10 +237,10 @@ public class SpringStatsDAO implements StatsDAO {
 		StringBuilder sql = new StringBuilder("select * from OGN_RECEIVER where date=? order by beacons_received desc");
 
 		if (limit == 0) {
-			args = new Object[] { date };
+			args = new Object[]{date};
 		} else {
 			sql.append(" limit ?");
-			args = new Object[] { date, limit };
+			args = new Object[]{date, limit};
 		}
 
 		RowMapper<Map<String, Object>> mapper = new RowMapper<Map<String, Object>>() {
@@ -280,10 +280,10 @@ public class SpringStatsDAO implements StatsDAO {
 		sql.append(" from OGN_RECEIVER").append(" where date=? and max_alt is not null order by max_alt desc");
 
 		if (limit == 0) {
-			args = new Object[] { date };
+			args = new Object[]{date};
 		} else {
 			sql.append(" limit ?");
-			args = new Object[] { date, limit };
+			args = new Object[]{date, limit};
 		}
 
 		RowMapper<Map<String, Object>> mapper = new RowMapper<Map<String, Object>>() {
@@ -308,7 +308,7 @@ public class SpringStatsDAO implements StatsDAO {
 	}
 
 	@Override
-	public void insertOrReplaceMaxAlt(long timestamp, String receiverName, String aircraftId, String aircraftReg,
+	public void upsertMaxAlt(long timestamp, String receiverName, String aircraftId, String aircraftReg,
 			float aircraftAlt) {
 
 		String sql = "insert or ignore into OGN_RECEIVER(date,receiver_name) values(?,?)";
@@ -324,7 +324,7 @@ public class SpringStatsDAO implements StatsDAO {
 	}
 
 	@Override
-	public void insertOrReplaceDailyStats(long date, int activeReceivers, int distinctArcraftIds) {
+	public void upsertDailyStats(long date, int activeReceivers, int distinctArcraftIds) {
 		final String sql = "insert or ignore into OGN_DAILY_STATS(date) values(?)";
 		jdbcTemplate.update(sql, date);
 		final String sql2 = "update OGN_DAILY_STATS set online_receivers=?, unique_aircraft_ids=? where date=?";

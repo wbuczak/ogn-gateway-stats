@@ -1,5 +1,5 @@
 /**
-t * Copyright (c) 2015 OGN, All Rights Reserved.
+ * t * Copyright (c) 2015 OGN, All Rights Reserved.
  */
 
 package org.ogn.gateway.plugin.stats;
@@ -40,43 +40,54 @@ import org.springframework.stereotype.Service;
  */
 public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwarder {
 
-	private static Logger LOG = LoggerFactory.getLogger(Stats.class);
+	private static Logger									LOG						=
+			LoggerFactory.getLogger(Stats.class);
 
-	private static final String VERSION = "0.0.1";
+	private static final String								VERSION					= "0.0.1";
 
-	private static final float MIN_RANGE = 50.0f; // discard everything below that
+	private static final float								MIN_RANGE				= 50.0f;						// discard
+																													// everything
+																													// below
+																													// that
 
-	private static final float MAX_RANGE = 300.0f; // discard everything above that
+	private static final float								MAX_RANGE				= 400.0f;						// discard
+																													// everything
+																													// above
+																													// that
 
-	private static final float MAX_ALT = 15000; // discard everything above that
+	private static final float								MAX_ALT					= 40000;						// discard
+																													// everything
+																													// above
+																													// that
 
-	private static ConcurrentMap<String, ReceiverBeacon> activeReceiversCache = new ConcurrentHashMap<>();
-	private static List<Object[]> maxRangeCache = new LinkedList<>();
+	private static ConcurrentMap<String, ReceiverBeacon>	activeReceiversCache	= new ConcurrentHashMap<>();
+	private static List<Object[]>							maxRangeCache			= new LinkedList<>();
 
-	private static ConcurrentMap<String, AtomicInteger> dailyRecCounters = new ConcurrentHashMap<>();
-	private static ConcurrentMap<String, Object[]> dailyAltCache = new ConcurrentHashMap<>();
-	private static ConcurrentMap<String, Boolean> dailyDistinctAircratIds = new ConcurrentHashMap<>();
+	private static ConcurrentMap<String, AtomicInteger>		dailyRecCounters		= new ConcurrentHashMap<>();
+	private static ConcurrentMap<String, Object[]>			dailyAltCache			= new ConcurrentHashMap<>();
+	private static ConcurrentMap<String, Boolean>			dailyDistinctAircratIds	= new ConcurrentHashMap<>();
 
-	private ClassPathXmlApplicationContext ctx;
+	private ClassPathXmlApplicationContext					ctx;
 
-	private static StatsService service;
+	private static StatsService								service;
 
-	private static Object syncMonitor = new Integer(1);
-	private static volatile boolean initialized = false;
+	private static Object									syncMonitor				= new Integer(1);
+	private static volatile boolean							initialized				= false;
 
-	private static Future<?> receiversCountFuture;
-	private static ScheduledExecutorService scheduler;
+	private static Future<?>								receiversCountFuture;
+	private static ScheduledExecutorService					scheduler;
 
-	private final ReentrantReadWriteLock maxAltLock = new ReentrantReadWriteLock();
-	private final Lock maxAltReadLock = maxAltLock.readLock();
-	private final Lock maxAltWriteLock = maxAltLock.writeLock();
+	private final ReentrantReadWriteLock					maxAltLock				= new ReentrantReadWriteLock();
+	private final Lock										maxAltReadLock			= maxAltLock.readLock();
+	private final Lock										maxAltWriteLock			= maxAltLock.writeLock();
 
-	private final ReentrantReadWriteLock maxRangeLock = new ReentrantReadWriteLock();
-	private final Lock maxRangeReadLock = maxRangeLock.readLock();
-	private final Lock maxRangeWriteLock = maxRangeLock.writeLock();
+	private final ReentrantReadWriteLock					maxRangeLock			= new ReentrantReadWriteLock();
+	private final Lock										maxRangeReadLock		= maxRangeLock.readLock();
+	private final Lock										maxRangeWriteLock		= maxRangeLock.writeLock();
 
 	@Service
-	@ManagedResource(objectName = "org.ogn.gateway.plugin.stats:name=Stats", description = "OGN gateway statistics collector plugin")
+	@ManagedResource(objectName = "org.ogn.gateway.plugin.stats:name=Stats",
+			description = "OGN gateway statistics collector plugin")
 	public static class StatsMBean {
 
 		@ManagedAttribute
@@ -108,8 +119,7 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 		public int getMaxRangeCacheSize() {
 			return maxRangeCache.size();
 		}
-		
-			
+
 		// clean the daily caches (1 sec after midnight)
 		@Scheduled(cron = "1 0 0 * * ?")
 		public void cleanDailyCaches() {
@@ -121,8 +131,6 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 			dailyDistinctAircratIds.clear();
 		}
 	}
-
-	
 
 	@Override
 	public String getName() {
@@ -162,18 +170,17 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 						LOG.debug("current activeReceiversCache size: {}", activeReceiversCache.size());
 						LOG.debug("current dailyDistinctAircratIds size: {}", dailyDistinctAircratIds.size());
 
-						service.insertOrReplaceDailyStats(date, activeReceiversCache.size(),
-								dailyDistinctAircratIds.size());
+						service.upsertDailyStats(date, activeReceiversCache.size(), dailyDistinctAircratIds.size());
 
 						LOG.debug("current daily receiver counter's cache size: {}", dailyRecCounters.size());
-						service.insertOrUpdateReceptionCounters(date, dailyRecCounters);
+						service.upsertReceptionCounters(date, dailyRecCounters);
 						LOG.debug("current daily receiver max-alt cache size: {}", dailyAltCache.size());
 
 						for (Entry<String, Object[]> entry : dailyAltCache.entrySet()) {
 							maxAltReadLock.lock();
 							Object[] maxAltAircraft = entry.getValue();
-							service.insertOrUpdateMaxAlt((long) maxAltAircraft[3], entry.getKey(),
-									(String) maxAltAircraft[0], (String) maxAltAircraft[1], (float) maxAltAircraft[2]);
+							service.upsertMaxAlt((long) maxAltAircraft[3], entry.getKey(), (String) maxAltAircraft[0],
+									(String) maxAltAircraft[1], (float) maxAltAircraft[2]);
 							maxAltReadLock.unlock();
 						}
 
@@ -182,7 +189,7 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 
 						maxRangeReadLock.lock();
 						for (Object[] entry : maxRangeCache) {
-							service.insertOrUpdateMaxRange((Long) entry[0], (Float) entry[1], (String) entry[2],
+							service.upsertMaxRange((Long) entry[0], (Float) entry[1], (String) entry[2],
 									(String) entry[3], (String) entry[4], (Float) entry[5]);
 						}
 						// clear max range cache
@@ -242,13 +249,13 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 		if (activeReceiversCache.containsKey(beacon.getReceiverName())) {
 
 			// calculate the distance between the beacon and its receiver
-			float range = (float) AprsUtils.calcDistanceInKm(beacon,
-					activeReceiversCache.get(beacon.getReceiverName()));
+			float range =
+					(float) AprsUtils.calcDistanceInKm(beacon, activeReceiversCache.get(beacon.getReceiverName()));
 
 			if (range >= MIN_RANGE && range < MAX_RANGE) {
 				maxRangeWriteLock.lock();
-				maxRangeCache.add(new Object[] { beacon.getTimestamp(), range, beacon.getReceiverName(), beacon.getId(),
-						descriptor.getRegNumber(), beacon.getAlt() });
+				maxRangeCache.add(new Object[]{beacon.getTimestamp(), range, beacon.getReceiverName(), beacon.getId(),
+						descriptor.getRegNumber(), beacon.getAlt()});
 				maxRangeWriteLock.unlock();
 			}
 

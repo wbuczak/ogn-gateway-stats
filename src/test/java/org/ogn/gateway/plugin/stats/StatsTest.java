@@ -18,10 +18,10 @@ import org.ogn.commons.beacon.AircraftBeacon;
 public class StatsTest {
 
 	@Mock
-	AircraftBeacon b1 = null;
- 
+	AircraftBeacon	b1	= null;
+
 	@Mock
-	AircraftBeacon b2 = null;
+	AircraftBeacon	b2	= null;
 
 	@Test
 	public void test() throws Exception {

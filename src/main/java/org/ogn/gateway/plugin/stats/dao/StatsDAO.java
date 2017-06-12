@@ -9,8 +9,8 @@ public interface StatsDAO {
 	// ## MAX RANGE
 	// ##########################################################################
 
-	void insertOrReplaceMaxRange(long timestamp, float distance, String receiverName, String aircraftId,
-			String aircraftReg, float aircraftAlt);
+	void upsertMaxRange(long timestamp, float distance, String receiverName, String aircraftId, String aircraftReg,
+			float aircraftAlt);
 
 	Map<String, Object> getMaxRange(long date, String receiverName);
 
@@ -22,7 +22,7 @@ public interface StatsDAO {
 	// ## DAILY STATS
 	// ##########################################################################
 
-	void insertOrReplaceDailyStats(long date, int activeReceivers, int distinctArcraftIds);
+	void upsertDailyStats(long date, int activeReceivers, int distinctArcraftIds);
 
 	List<Map<String, Object>> getDailyStatsForDays(int days);
 
@@ -34,7 +34,7 @@ public interface StatsDAO {
 	// ## AIRCRAFT BEACONS RECEPTION
 	// ##########################################################################
 
-	void insertOrReplaceReceptionCounter(long date, String receiverName, int counter);
+	void upsertReceptionCounter(long date, String receiverName, int counter);
 
 	int getReceptionCounter(long date, String receiverName);
 
@@ -46,8 +46,7 @@ public interface StatsDAO {
 	// ## MAX ALT
 	// ##########################################################################
 
-	void insertOrReplaceMaxAlt(long timestamp, String receiverName, String aircraftId, String aircraftReg,
-			float aircraftAlt);
+	void upsertMaxAlt(long timestamp, String receiverName, String aircraftId, String aircraftReg, float aircraftAlt);
 
 	float getMaxAlt(long date, String receiverName);
 

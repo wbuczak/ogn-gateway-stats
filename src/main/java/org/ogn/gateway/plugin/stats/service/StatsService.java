@@ -16,7 +16,7 @@ public interface StatsService {
 	// ## MAX RANGE
 	// ##########################################################################
 
-	void insertOrUpdateMaxRange(long timestamp, float range, String receiverName, String aircraftId, String aircraftReg,
+	void upsertMaxRange(long timestamp, float range, String receiverName, String aircraftId, String aircraftReg,
 			float aircraftAlt);
 
 	Map<String, Object> getMaxRange(long removeTime, String string);
@@ -29,7 +29,7 @@ public interface StatsService {
 	// ## DAILY STATS
 	// ##########################################################################
 
-	void insertOrReplaceDailyStats(long date, int activeReceivers, int distinctArcraftIds);
+	void upsertDailyStats(long date, int activeReceivers, int distinctArcraftIds);
 
 	List<Map<String, Object>> getDailyStatsForDays(int days);
 
@@ -41,7 +41,7 @@ public interface StatsService {
 	// ## AIRCRAFT BEACONS RECEPTION
 	// ##########################################################################
 
-	void insertOrUpdateReceptionCounters(long date, Map<String, AtomicInteger> counters);
+	void upsertReceptionCounters(long date, Map<String, AtomicInteger> counters);
 
 	int getReceptionCounter(long date, String receiverName);
 
@@ -53,8 +53,7 @@ public interface StatsService {
 	// ## MAX ALT
 	// ##########################################################################
 
-	void insertOrUpdateMaxAlt(long timestamp, String receiverName, String aircraftId, String aircraftReg,
-			float aircraftAlt);
+	void upsertMaxAlt(long timestamp, String receiverName, String aircraftId, String aircraftReg, float aircraftAlt);
 
 	float getMaxAlt(long date, String receiverName);
 

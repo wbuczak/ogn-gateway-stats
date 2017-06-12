@@ -18,7 +18,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = { "classpath:stats-application-context.xml" })
+@ContextConfiguration(locations = {"classpath:stats-application-context.xml"})
 @ActiveProfiles("TEST")
 public class StatsServiceTest {
 
@@ -32,9 +32,9 @@ public class StatsServiceTest {
 
 		long timestamp = datetime.toInstant(ZoneOffset.UTC).toEpochMilli();
 
-		service.insertOrUpdateMaxRange(timestamp, 58.23f, "TestRec1", "OGN123456", null, 600);
-		service.insertOrUpdateMaxRange(timestamp, 60.23f, "TestRec1", "OGN123456", null, 600);
-		service.insertOrUpdateMaxRange(timestamp, 57.80f, "TestRec1", "FLR543533", null, 600);
+		service.upsertMaxRange(timestamp, 58.23f, "TestRec1", "OGN123456", null, 600);
+		service.upsertMaxRange(timestamp, 60.23f, "TestRec1", "OGN123456", null, 600);
+		service.upsertMaxRange(timestamp, 57.80f, "TestRec1", "FLR543533", null, 600);
 
 		Map<String, Object> rec = service.getMaxRange(removeTime(timestamp), "TestRec1");
 		// the record with largest distance for a day should be remembered
@@ -45,7 +45,7 @@ public class StatsServiceTest {
 
 		long timestamp2 = datetime2.toInstant(ZoneOffset.UTC).toEpochMilli();
 
-		service.insertOrUpdateMaxRange(timestamp2, 120.0f, "TestRec1", "OGN123456", null, 720);
+		service.upsertMaxRange(timestamp2, 120.0f, "TestRec1", "OGN123456", null, 720);
 
 		rec = service.getMaxRange(removeTime(timestamp), "TestRec1");
 		// the record with largest distance for a day should be remembered
@@ -64,8 +64,8 @@ public class StatsServiceTest {
 		long timestamp = datetime.toInstant(ZoneOffset.UTC).toEpochMilli();
 
 		long date = removeTime(timestamp);
-		service.insertOrReplaceDailyStats(date, 540, 1300);
-		service.insertOrReplaceDailyStats(date, 550, 1000);
+		service.upsertDailyStats(date, 540, 1300);
+		service.upsertDailyStats(date, 550, 1000);
 
 		assertEquals(1300, service.getDistinctAircraftReceivedCounter(date));
 		assertEquals(550, service.getActiveReceiversCounter(date));
@@ -86,12 +86,12 @@ public class StatsServiceTest {
 		counters.put("Rec3", new AtomicInteger(120));
 		counters.put("Rec4", new AtomicInteger(40));
 
-		service.insertOrUpdateReceptionCounters(date, counters);
+		service.upsertReceptionCounters(date, counters);
 
 		// simulate restart - counter is smaller than the last in the db
 		counters = new HashMap<String, AtomicInteger>();
 		counters.put("Rec3", new AtomicInteger(10));
-		service.insertOrUpdateReceptionCounters(date, counters);
+		service.upsertReceptionCounters(date, counters);
 
 		assertEquals(120, service.getReceptionCounter(date, "Rec3"));
 
@@ -107,12 +107,12 @@ public class StatsServiceTest {
 
 		long date = removeTime(timestamp);
 
-		service.insertOrUpdateMaxAlt(date, "Rec1", "343433", "SP-ABC", 2050.0f);
-		service.insertOrUpdateMaxAlt(date, "Rec2", "443433", null, 3234.5f);
-		service.insertOrUpdateMaxAlt(date, "Rec3", "656543", null, 560.0f);
-		service.insertOrUpdateMaxAlt(date, "Rec4", "554343", null, 1200f);
+		service.upsertMaxAlt(date, "Rec1", "343433", "SP-ABC", 2050.0f);
+		service.upsertMaxAlt(date, "Rec2", "443433", null, 3234.5f);
+		service.upsertMaxAlt(date, "Rec3", "656543", null, 560.0f);
+		service.upsertMaxAlt(date, "Rec4", "554343", null, 1200f);
 
-		service.insertOrUpdateMaxAlt(date, "Rec2", "443433", null, 3100f);
+		service.upsertMaxAlt(date, "Rec2", "443433", null, 3100f);
 
 		// still the previous (greater) alt should be returned
 		assertEquals(3234.5f, service.getMaxAlt(date, "Rec2"), 1e-10);

@@ -25,8 +25,8 @@ public class StatsServiceImpl implements StatsService {
 
 	@Override
 	@Transactional
-	public void insertOrUpdateMaxRange(long timestamp, float range, String receiverName, String aircraftId,
-			String aircraftReg, float aircraftAlt) {
+	public void upsertMaxRange(long timestamp, float range, String receiverName, String aircraftId, String aircraftReg,
+			float aircraftAlt) {
 
 		long date = removeTime(timestamp);
 
@@ -34,31 +34,31 @@ public class StatsServiceImpl implements StatsService {
 
 		// if there's no record for a given receiver or the last know max-range is smaller than the current one
 		if (null == rec || (float) rec.get("range") < range) {
-			dao.insertOrReplaceMaxRange(timestamp, range, receiverName, aircraftId, aircraftReg, aircraftAlt);
+			dao.upsertMaxRange(timestamp, range, receiverName, aircraftId, aircraftReg, aircraftAlt);
 		}
 	}
 
 	@Override
 	@Transactional
-	public void insertOrUpdateReceptionCounters(long date, Map<String, AtomicInteger> counters) {
+	public void upsertReceptionCounters(long date, Map<String, AtomicInteger> counters) {
 		for (Entry<String, AtomicInteger> e : counters.entrySet()) {
 			int dbcount = dao.getReceptionCounter(date, e.getKey());
 			// update only if new value is greater than the last in the db (prevents faulty
 			// updates when restarting the gateway)
 			if (-1 == dbcount || dbcount < e.getValue().get()) {
-				dao.insertOrReplaceReceptionCounter(date, e.getKey(), e.getValue().get());
+				dao.upsertReceptionCounter(date, e.getKey(), e.getValue().get());
 			}
 		}
 	}
 
 	@Override
 	@Transactional
-	public void insertOrUpdateMaxAlt(long timestamp, String receiverName, String aircraftId, String aircraftReg,
+	public void upsertMaxAlt(long timestamp, String receiverName, String aircraftId, String aircraftReg,
 			float aircraftAlt) {
 		long date = removeTime(timestamp);
 		float dbalt = dao.getMaxAlt(date, receiverName);
 		if (Float.isNaN(dbalt) || dbalt < aircraftAlt)
-			dao.insertOrReplaceMaxAlt(timestamp, receiverName, aircraftId, aircraftReg, aircraftAlt);
+			dao.upsertMaxAlt(timestamp, receiverName, aircraftId, aircraftReg, aircraftAlt);
 	}
 
 	@Override
@@ -117,14 +117,14 @@ public class StatsServiceImpl implements StatsService {
 
 	@Override
 	@Transactional
-	public void insertOrReplaceDailyStats(long date, int activeReceivers, int distinctAircraftIds) {
+	public void upsertDailyStats(long date, int activeReceivers, int distinctAircraftIds) {
 		int dbActiveReceivers = dao.getActiveReceiversCounter(date);
 		int dbAircraftIds = dao.getDistinctAircraftReceivedCounter(date);
 
 		int updateReceivers = activeReceivers > dbActiveReceivers ? activeReceivers : dbActiveReceivers;
 		int updateAircraftIds = distinctAircraftIds > dbAircraftIds ? distinctAircraftIds : dbAircraftIds;
 
-		dao.insertOrReplaceDailyStats(date, updateReceivers, updateAircraftIds);
+		dao.upsertDailyStats(date, updateReceivers, updateAircraftIds);
 	}
 
 	@Override
