@@ -8,6 +8,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executors;
@@ -217,7 +218,7 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 	}
 
 	@Override
-	public void onBeacon(AircraftBeacon beacon, AircraftDescriptor descriptor) {
+	public void onBeacon(AircraftBeacon beacon, Optional<AircraftDescriptor> descriptor) {
 
 		// remember that this aircraft has been received
 		dailyDistinctAircratIds.putIfAbsent(beacon.getId(), true);
@@ -230,7 +231,7 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 			if (!dailyAltCache.containsKey(beacon.getReceiverName())) {
 				Object[] maxAltAircraft = new Object[4];
 				maxAltAircraft[0] = beacon.getId();
-				maxAltAircraft[1] = descriptor.getRegNumber();
+				maxAltAircraft[1] = descriptor.isPresent() ? descriptor.get().getRegNumber() : null;
 				maxAltAircraft[2] = beacon.getAlt();
 				maxAltAircraft[3] = beacon.getTimestamp();
 				maxAltWriteLock.lock();
@@ -255,7 +256,7 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 			if (range >= MIN_RANGE && range < MAX_RANGE) {
 				maxRangeWriteLock.lock();
 				maxRangeCache.add(new Object[]{beacon.getTimestamp(), range, beacon.getReceiverName(), beacon.getId(),
-						descriptor.getRegNumber(), beacon.getAlt()});
+						descriptor.isPresent() ? descriptor.get().getRegNumber() : null, beacon.getAlt()});
 				maxRangeWriteLock.unlock();
 			}
 
