@@ -41,10 +41,10 @@ import org.springframework.stereotype.Service;
  */
 public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwarder {
 
-	private static Logger									LOG						=
+	private static final Logger								LOG						=
 			LoggerFactory.getLogger(Stats.class);
 
-	private static final String								VERSION					= "0.0.1";
+	private static final String								VERSION					= "1.0.0";
 
 	private static final float								MIN_RANGE				= 50.0f;						// discard
 																													// everything
@@ -72,11 +72,10 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 
 	private static StatsService								service;
 
-	private static Object									syncMonitor				= new Integer(1);
+	private static Object									syncMonitor				= 1;
 	private static volatile boolean							initialized				= false;
 
 	private static Future<?>								receiversCountFuture;
-	private static ScheduledExecutorService					scheduler;
 
 	private final ReentrantReadWriteLock					maxAltLock				= new ReentrantReadWriteLock();
 	private final Lock										maxAltReadLock			= maxAltLock.readLock();
@@ -150,7 +149,7 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 
 	@Override
 	public void init() {
-
+		final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 		synchronized (syncMonitor) {
 			if (!initialized) {
 				try {
@@ -158,15 +157,13 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 					ctx.getEnvironment().setDefaultProfiles("PRO");
 					service = ctx.getBean(StatsService.class);
 					initialized = true;
-				} catch (Exception ex) {
+				} catch (final Exception ex) {
 					LOG.error("context initialization failed", ex);
 				}
 
-				scheduler = Executors.newScheduledThreadPool(1);
-
-				Runnable job = () -> {
+				final Runnable job = () -> {
 					try {
-						long date = TimeDateUtils.removeTime(System.currentTimeMillis());
+						final long date = TimeDateUtils.removeTime(System.currentTimeMillis());
 
 						LOG.debug("current activeReceiversCache size: {}", activeReceiversCache.size());
 						LOG.debug("current dailyDistinctAircratIds size: {}", dailyDistinctAircratIds.size());
@@ -177,9 +174,9 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 						service.upsertReceptionCounters(date, dailyRecCounters);
 						LOG.debug("current daily receiver max-alt cache size: {}", dailyAltCache.size());
 
-						for (Entry<String, Object[]> entry : dailyAltCache.entrySet()) {
+						for (final Entry<String, Object[]> entry : dailyAltCache.entrySet()) {
 							maxAltReadLock.lock();
-							Object[] maxAltAircraft = entry.getValue();
+							final Object[] maxAltAircraft = entry.getValue();
 							service.upsertMaxAlt((long) maxAltAircraft[3], entry.getKey(), (String) maxAltAircraft[0],
 									(String) maxAltAircraft[1], (float) maxAltAircraft[2]);
 							maxAltReadLock.unlock();
@@ -189,7 +186,7 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 						activeReceiversCache.clear();
 
 						maxRangeReadLock.lock();
-						for (Object[] entry : maxRangeCache) {
+						for (final Object[] entry : maxRangeCache) {
 							service.upsertMaxRange((Long) entry[0], (Float) entry[1], (String) entry[2],
 									(String) entry[3], (String) entry[4], (Float) entry[5]);
 						}
@@ -197,7 +194,7 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 						maxRangeCache.clear();
 						maxRangeReadLock.unlock();
 
-					} catch (Exception ex) {
+					} catch (final Exception ex) {
 						LOG.error("exception caught", ex);
 					}
 				};
@@ -229,7 +226,7 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 
 		if (beacon.getAlt() < MAX_ALT)
 			if (!dailyAltCache.containsKey(beacon.getReceiverName())) {
-				Object[] maxAltAircraft = new Object[4];
+				final Object[] maxAltAircraft = new Object[4];
 				maxAltAircraft[0] = beacon.getId();
 				maxAltAircraft[1] = descriptor.isPresent() ? descriptor.get().getRegNumber() : null;
 				maxAltAircraft[2] = beacon.getAlt();
@@ -238,7 +235,7 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 				dailyAltCache.put(beacon.getReceiverName(), maxAltAircraft);
 				maxAltWriteLock.unlock();
 			} else {
-				Object[] maxAltAircraft = dailyAltCache.get(beacon.getReceiverName());
+				final Object[] maxAltAircraft = dailyAltCache.get(beacon.getReceiverName());
 				if ((float) maxAltAircraft[2] < beacon.getAlt()) {
 					maxAltWriteLock.lock();
 					maxAltAircraft[2] = beacon.getAlt();
@@ -250,7 +247,7 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 		if (activeReceiversCache.containsKey(beacon.getReceiverName())) {
 
 			// calculate the distance between the beacon and its receiver
-			float range =
+			final float range =
 					(float) AprsUtils.calcDistanceInKm(beacon, activeReceiversCache.get(beacon.getReceiverName()));
 
 			if (range >= MIN_RANGE && range < MAX_RANGE) {
