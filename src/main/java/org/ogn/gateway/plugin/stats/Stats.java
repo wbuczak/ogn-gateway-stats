@@ -22,6 +22,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.ogn.commons.beacon.AircraftBeacon;
 import org.ogn.commons.beacon.AircraftDescriptor;
 import org.ogn.commons.beacon.ReceiverBeacon;
+import org.ogn.commons.beacon.ReceiverBeaconType;
 import org.ogn.commons.beacon.forwarder.OgnAircraftBeaconForwarder;
 import org.ogn.commons.beacon.forwarder.OgnReceiverBeaconForwarder;
 import org.ogn.commons.utils.AprsUtils;
@@ -263,6 +264,7 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 
 	@Override
 	public void onBeacon(ReceiverBeacon beacon) {
-		activeReceiversCache.put(beacon.getId(), beacon);
+		if (ReceiverBeaconType.RECEIVER_POSITION == beacon.getReceiverBeaconType())
+			activeReceiversCache.put(beacon.getId(), beacon);
 	}
 }
