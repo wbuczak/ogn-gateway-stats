@@ -1,19 +1,23 @@
 package org.ogn.gateway.plugin.stats;
 
+import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.replay;
+import static org.easymock.EasyMock.reset;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import org.easymock.EasyMockRunner;
 import org.easymock.Mock;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.ogn.commons.beacon.AircraftBeacon;
+import org.ogn.commons.beacon.ReceiverBeacon;
 
 /**
- * Copyright (c) 2015 OGN, All Rights Reserved.
+ * Copyright (c) 2015-2018 OGN, All Rights Reserved.
  */
 
-@Ignore
+// @Ignore
 @RunWith(EasyMockRunner.class)
 public class StatsTest {
 
@@ -21,40 +25,26 @@ public class StatsTest {
 	AircraftBeacon	b1	= null;
 
 	@Mock
-	AircraftBeacon	b2	= null;
+	ReceiverBeacon	r1	= null;
 
 	@Test
-	public void test() throws Exception {
+	public void testReceptionRangeValidationAlgo() throws Exception {
 
-		Stats mrd = new Stats();
-		mrd.init();
+		final Stats stats = new Stats();
 
-		Thread.sleep(Long.MAX_VALUE);
+		expect(b1.getAlt()).andReturn(55.3f);
+		expect(r1.getAlt()).andReturn(220.3f);
+		replay(b1, r1);
 
-		assertTrue(true);
+		assertFalse(stats.isValidDistance(151, b1, r1));
+		assertTrue(stats.isValidDistance(148, b1, r1));
 
-		// expect(b1.getId()).andReturn("DD1223").anyTimes();
-		// expect(b1.getLat()).andReturn(1.0).anyTimes();
-		// expect(b1.getLon()).andReturn(1.0).anyTimes();
-		// expect(b1.getReceiverName()).andReturn("REC1").anyTimes();
-		// long t = System.currentTimeMillis() - 15000;
-		// expect(b1.getTimestamp()).andReturn(t).anyTimes();
-		//
-		// expect(b2.getId()).andReturn("DD1223").anyTimes();
-		// expect(b2.getLat()).andReturn(1.2434).anyTimes();
-		// expect(b2.getLon()).andReturn(0.54).anyTimes();
-		// long t2 = t + 30000;
-		// expect(b2.getTimestamp()).andReturn(t2).anyTimes();
-		// expect(b2.getReceiverName()).andReturn("REC1").times(2);
-		// expect(b2.getReceiverName()).andReturn("REC2").times(2);
-		//
-		// replay(b1, b2);
-		//
-		// MaxRangeDetector dd = new MaxRangeDetector();
-		// dd.onBeacon(b1, null, "not important");
-		// dd.onBeacon(b2, null, "not important");
-		// dd.onBeacon(b2, null, "not important");
-		// dd.onBeacon(b2, null, "not important");
+		reset(b1, r1);
+		expect(b1.getAlt()).andReturn(1100.0f).anyTimes();
+		expect(r1.getAlt()).andReturn(285.0f).anyTimes();
+		replay(b1, r1);
 
+		assertTrue(stats.isValidDistance(320, b1, r1));
+		assertTrue(stats.isValidDistance(500, b1, r1));
 	}
 }

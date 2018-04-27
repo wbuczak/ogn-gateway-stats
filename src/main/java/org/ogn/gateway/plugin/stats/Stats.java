@@ -251,7 +251,12 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 			final float range =
 					(float) AprsUtils.calcDistanceInKm(beacon, activeReceiversCache.get(beacon.getReceiverName()));
 
-			if (range >= MIN_RANGE && range < MAX_RANGE) {
+			// eliminate obviously wrong data (wrong coordinates of a receiver may result in suspiciously far
+			// reception distances)
+
+			if (range >= MIN_RANGE && range < MAX_RANGE
+					&& isValidDistance(range, beacon, activeReceiversCache.get(beacon.getReceiverName()))) {
+
 				maxRangeWriteLock.lock();
 				maxRangeCache.add(new Object[]{beacon.getTimestamp(), range, beacon.getReceiverName(), beacon.getId(),
 						descriptor.isPresent() ? descriptor.get().getRegNumber() : null, beacon.getAlt()});
@@ -260,6 +265,17 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 
 		} // if
 
+	}
+
+	boolean isValidDistance(float range, AircraftBeacon beacon, ReceiverBeacon receiver) {
+		// TODO: improve the algo - the 'protection' mechanism should be based on the analysis
+		// of the signal strength of the received packet vs the sensibility of the receiver.
+
+		final float minRangeForAnalysis = 150.0f;
+		final float maxAltDiffForAnalysis = 200.0f;
+
+		// check the difference in altitudes (if it's less then 200m)
+		return !(range > minRangeForAnalysis && Math.abs(beacon.getAlt() - receiver.getAlt()) < maxAltDiffForAnalysis);
 	}
 
 	@Override
