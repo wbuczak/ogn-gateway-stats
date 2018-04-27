@@ -17,7 +17,6 @@ import org.ogn.commons.beacon.ReceiverBeacon;
  * Copyright (c) 2015-2018 OGN, All Rights Reserved.
  */
 
-// @Ignore
 @RunWith(EasyMockRunner.class)
 public class StatsTest {
 
@@ -28,23 +27,22 @@ public class StatsTest {
 	ReceiverBeacon	r1	= null;
 
 	@Test
-	public void testReceptionRangeValidationAlgo() throws Exception {
+	public void testReceptionSignalValidationAlgo() throws Exception {
 
 		final Stats stats = new Stats();
 
-		expect(b1.getAlt()).andReturn(55.3f);
-		expect(r1.getAlt()).andReturn(220.3f);
-		replay(b1, r1);
+		expect(b1.getSignalStrength()).andReturn(40.2f).anyTimes();
+		replay(b1);
 
-		assertFalse(stats.isValidDistance(151, b1, r1));
-		assertTrue(stats.isValidDistance(148, b1, r1));
+		assertFalse(stats.isValidSignalStrength4Distance(151, b1));
+		assertTrue(stats.isValidSignalStrength4Distance(5, b1));
 
-		reset(b1, r1);
-		expect(b1.getAlt()).andReturn(1100.0f).anyTimes();
-		expect(r1.getAlt()).andReturn(285.0f).anyTimes();
-		replay(b1, r1);
+		reset(b1);
+		expect(b1.getSignalStrength()).andReturn(18.2f).anyTimes();
+		replay(b1);
 
-		assertTrue(stats.isValidDistance(320, b1, r1));
-		assertTrue(stats.isValidDistance(500, b1, r1));
+		assertTrue(stats.isValidSignalStrength4Distance(120, b1));
+		assertFalse(stats.isValidSignalStrength4Distance(320, b1));
+		assertFalse(stats.isValidSignalStrength4Distance(800, b1));
 	}
 }

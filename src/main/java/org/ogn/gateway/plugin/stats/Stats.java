@@ -52,7 +52,7 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 																													// below
 																													// that
 
-	private static final float								MAX_RANGE				= 400.0f;						// discard
+	private static final float								MAX_RANGE				= 500.0f;						// discard
 																													// everything
 																													// above
 																													// that
@@ -254,8 +254,7 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 			// eliminate obviously wrong data (wrong coordinates of a receiver may result in suspiciously far
 			// reception distances)
 
-			if (range >= MIN_RANGE && range < MAX_RANGE
-					&& isValidDistance(range, beacon, activeReceiversCache.get(beacon.getReceiverName()))) {
+			if (range >= MIN_RANGE && range < MAX_RANGE && isValidSignalStrength4Distance(range, beacon)) {
 
 				maxRangeWriteLock.lock();
 				maxRangeCache.add(new Object[]{beacon.getTimestamp(), range, beacon.getReceiverName(), beacon.getId(),
@@ -267,15 +266,9 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 
 	}
 
-	boolean isValidDistance(float range, AircraftBeacon beacon, ReceiverBeacon receiver) {
-		// TODO: improve the algo - the 'protection' mechanism should be based on the analysis
-		// of the signal strength of the received packet vs the sensibility of the receiver.
-
-		final float minRangeForAnalysis = 150.0f;
-		final float maxAltDiffForAnalysis = 200.0f;
-
-		// check the difference in altitudes (if it's less then 200m)
-		return !(range > minRangeForAnalysis && Math.abs(beacon.getAlt() - receiver.getAlt()) < maxAltDiffForAnalysis);
+	boolean isValidSignalStrength4Distance(float range, AircraftBeacon beacon) {
+		// max signal strength limit formula: 40-20*log10(Distance/10km)
+		return beacon.getSignalStrength() < 40 - 20 * Math.log10(range / 10.0f);
 	}
 
 	@Override
