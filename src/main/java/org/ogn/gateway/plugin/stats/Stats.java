@@ -42,49 +42,61 @@ import org.springframework.stereotype.Service;
  */
 public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwarder {
 
-	private static final Logger								LOG						=
+	private static final Logger								LOG									=
 			LoggerFactory.getLogger(Stats.class);
 
-	private static final String								VERSION					= "1.0.0";
+	private static final String								VERSION								= "1.0.0";
 
-	private static final float								MIN_RANGE				= 50.0f;						// discard
-																													// everything
-																													// below
-																													// that
+	private static final float								MIN_RANGE							= 50.0f;				// discard
+																														// everything
+																														// below
+																														// that
 
-	private static final float								MAX_RANGE				= 500.0f;						// discard
-																													// everything
-																													// above
-																													// that
+	private static final float								MAX_RANGE							= 500.0f;				// discard
+																														// everything
+																														// above
+																														// that
 
-	private static final float								MAX_ALT					= 40000;						// discard
-																													// everything
-																													// above
-																													// that
+	private static final float								MAX_ALT								= 40000;				// discard
+																														// everything
+																														// above
+																														// that
 
-	private static ConcurrentMap<String, ReceiverBeacon>	activeReceiversCache	= new ConcurrentHashMap<>();
-	private static List<Object[]>							maxRangeCache			= new LinkedList<>();
+	private static final float								MAX_CLIMB_RATE_IN_METERS_PER_SEC	=
+			AprsUtils.feetsToMetres(5_000) / 60;
 
-	private static ConcurrentMap<String, AtomicInteger>		dailyRecCounters		= new ConcurrentHashMap<>();
-	private static ConcurrentMap<String, Object[]>			dailyAltCache			= new ConcurrentHashMap<>();
-	private static ConcurrentMap<String, Boolean>			dailyDistinctAircratIds	= new ConcurrentHashMap<>();
+	private static ConcurrentMap<String, ReceiverBeacon>	activeReceiversCache				=
+			new ConcurrentHashMap<>();
+	private static List<Object[]>							maxRangeCache						= new LinkedList<>();
+
+	private static ConcurrentMap<String, AtomicInteger>		dailyRecCounters					=
+			new ConcurrentHashMap<>();
+	private static ConcurrentMap<String, Object[]>			dailyAltCache						=
+			new ConcurrentHashMap<>();
+	private static ConcurrentMap<String, Boolean>			dailyDistinctAircratIds				=
+			new ConcurrentHashMap<>();
 
 	private ClassPathXmlApplicationContext					ctx;
 
 	private static StatsService								service;
 
-	private static Object									syncMonitor				= 1;
-	private static volatile boolean							initialized				= false;
+	private static Object									syncMonitor							= 1;
+	private static volatile boolean							initialized							= false;
 
 	private static Future<?>								receiversCountFuture;
 
-	private final ReentrantReadWriteLock					maxAltLock				= new ReentrantReadWriteLock();
-	private final Lock										maxAltReadLock			= maxAltLock.readLock();
-	private final Lock										maxAltWriteLock			= maxAltLock.writeLock();
+	private final ReentrantReadWriteLock					maxAltLock							=
+			new ReentrantReadWriteLock();
+	private final Lock										maxAltReadLock						= maxAltLock.readLock();
+	private final Lock										maxAltWriteLock						=
+			maxAltLock.writeLock();
 
-	private final ReentrantReadWriteLock					maxRangeLock			= new ReentrantReadWriteLock();
-	private final Lock										maxRangeReadLock		= maxRangeLock.readLock();
-	private final Lock										maxRangeWriteLock		= maxRangeLock.writeLock();
+	private final ReentrantReadWriteLock					maxRangeLock						=
+			new ReentrantReadWriteLock();
+	private final Lock										maxRangeReadLock					=
+			maxRangeLock.readLock();
+	private final Lock										maxRangeWriteLock					=
+			maxRangeLock.writeLock();
 
 	@Service
 	@ManagedResource(objectName = "org.ogn.gateway.plugin.stats:name=Stats",
@@ -221,9 +233,8 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 		// remember that this aircraft has been received
 		dailyDistinctAircratIds.putIfAbsent(beacon.getId(), true);
 
-		// counters..
-		if (dailyRecCounters.putIfAbsent(beacon.getReceiverName(), new AtomicInteger(1)) != null)
-			dailyRecCounters.get(beacon.getReceiverName()).incrementAndGet();
+		dailyRecCounters.putIfAbsent(beacon.getReceiverName(), new AtomicInteger(0));
+		dailyRecCounters.get(beacon.getReceiverName()).incrementAndGet();
 
 		if (beacon.getAlt() < MAX_ALT)
 			if (!dailyAltCache.containsKey(beacon.getReceiverName())) {
@@ -237,7 +248,9 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 				maxAltWriteLock.unlock();
 			} else {
 				final Object[] maxAltAircraft = dailyAltCache.get(beacon.getReceiverName());
-				if ((float) maxAltAircraft[2] < beacon.getAlt()) {
+
+				if ((float) maxAltAircraft[2] < beacon.getAlt()
+						&& isValidClimbRate(beacon, (float) maxAltAircraft[2], (long) maxAltAircraft[3])) {
 					maxAltWriteLock.lock();
 					maxAltAircraft[2] = beacon.getAlt();
 					maxAltWriteLock.unlock();
@@ -269,6 +282,12 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 	boolean isValidSignalStrength4Distance(float range, AircraftBeacon beacon) {
 		// max signal strength limit formula: 40-20*log10(Distance/10km)
 		return beacon.getSignalStrength() < 40 - 20 * Math.log10(range / 10.0f);
+	}
+
+	boolean isValidClimbRate(AircraftBeacon beacon, float previousAlt, long previousTimestamp) {
+		final long timeDiff = (beacon.getTimestamp() - previousTimestamp) / 1000;
+		final float altDiff = Math.abs(beacon.getAlt() - previousAlt);
+		return altDiff / timeDiff <= MAX_CLIMB_RATE_IN_METERS_PER_SEC;
 	}
 
 	@Override
