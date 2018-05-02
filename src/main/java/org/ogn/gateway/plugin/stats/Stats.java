@@ -236,7 +236,7 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 		dailyRecCounters.putIfAbsent(beacon.getReceiverName(), new AtomicInteger(0));
 		dailyRecCounters.get(beacon.getReceiverName()).incrementAndGet();
 
-		if (beacon.getAlt() < MAX_ALT)
+		if (!beacon.isRelayed() && beacon.getAlt() < MAX_ALT)
 			if (!dailyAltCache.containsKey(beacon.getReceiverName())) {
 				final Object[] maxAltAircraft = new Object[4];
 				maxAltAircraft[0] = beacon.getId();
@@ -265,9 +265,10 @@ public class Stats implements OgnAircraftBeaconForwarder, OgnReceiverBeaconForwa
 					(float) AprsUtils.calcDistanceInKm(beacon, activeReceiversCache.get(beacon.getReceiverName()));
 
 			// eliminate obviously wrong data (wrong coordinates of a receiver may result in suspiciously far
-			// reception distances)
+			// reception distances), eliminate relayed beacons
 
-			if (range >= MIN_RANGE && range < MAX_RANGE && isValidSignalStrength4Distance(range, beacon)) {
+			if (!beacon.isRelayed() && range >= MIN_RANGE && range < MAX_RANGE
+					&& isValidSignalStrength4Distance(range, beacon)) {
 
 				maxRangeWriteLock.lock();
 				maxRangeCache.add(new Object[]{beacon.getTimestamp(), range, beacon.getReceiverName(), beacon.getId(),
