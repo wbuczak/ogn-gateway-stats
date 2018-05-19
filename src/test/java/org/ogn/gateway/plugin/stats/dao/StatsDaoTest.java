@@ -30,24 +30,24 @@ public class StatsDaoTest {
 	@Test
 	@DirtiesContext
 	public void testInsertOrReplaceRange1() throws Exception {
-		long timestamp = datetime.toInstant(ZoneOffset.UTC).toEpochMilli();
+		final long timestamp = datetime.toInstant(ZoneOffset.UTC).toEpochMilli();
 		dao.upsertMaxRange(timestamp, 58.23f, "TestRec1", "OGN123456", null, 1250);
 		dao.upsertMaxRange(timestamp + 2 * 3600 * 1000 + 150, 58.23f, "TestRec1", "OGN123456", null, 1643);
-		int records = dao.getTopMaxRanges(TimeDateUtils.removeTime(timestamp), 10).size();
+		final int records = dao.getTopMaxRanges(TimeDateUtils.removeTime(timestamp), 10).size();
 		assertEquals(1, records);
 	}
 
 	@Test
 	@DirtiesContext
 	public void testInsertOrReplaceRange2() throws Exception {
-		long timestamp = datetime.toInstant(ZoneOffset.UTC).toEpochMilli();
+		final long timestamp = datetime.toInstant(ZoneOffset.UTC).toEpochMilli();
 
 		assertNotNull(dao);
 		dao.upsertMaxRange(timestamp, 58.23f, "TestRec1", "OGN123456", null, 420);
 		dao.upsertMaxRange(timestamp, 60.40f, "TestRec1", "FLR123456", "SP-1234", 432.5f);
 
-		long date = TimeDateUtils.removeTime(timestamp);
-		Map<String, Object> rec = dao.getMaxRange(date, "TestRec1");
+		final long date = TimeDateUtils.removeTime(timestamp);
+		final Map<String, Object> rec = dao.getMaxRange(date, "TestRec1");
 		assertNotNull(rec);
 		assertEquals(60.40f, rec.get("range"));
 		assertEquals("SP-1234", rec.get("aircraft_reg"));
@@ -58,8 +58,8 @@ public class StatsDaoTest {
 	@Test
 	@DirtiesContext
 	public void testInsertingStatsRecord1() throws Exception {
-		long timestamp = datetime.toInstant(ZoneOffset.UTC).toEpochMilli();
-		long date = TimeDateUtils.removeTime(timestamp);
+		final long timestamp = datetime.toInstant(ZoneOffset.UTC).toEpochMilli();
+		final long date = TimeDateUtils.removeTime(timestamp);
 		assertEquals(-1, dao.getActiveReceiversCounter(date));
 		dao.upsertDailyStats(date, 55, 100);
 		assertEquals(55, dao.getActiveReceiversCounter(date));
@@ -71,7 +71,7 @@ public class StatsDaoTest {
 	@Test
 	@DirtiesContext
 	public void testInsertingStatsRecord2() throws Exception {
-		long timestamp = datetime.toInstant(ZoneOffset.UTC).toEpochMilli();
+		final long timestamp = datetime.toInstant(ZoneOffset.UTC).toEpochMilli();
 
 		long date = TimeDateUtils.removeTime(timestamp);
 		dao.upsertDailyStats(date, 15, 100);
@@ -88,11 +88,11 @@ public class StatsDaoTest {
 		dao.upsertDailyStats(date, 45, 99);
 		dao.upsertDailyStats(date, 48, 55);
 
-		List<Map<String, Object>> records = dao.getDailyStatsForDays(10);
+		final List<Map<String, Object>> records = dao.getDailyStatsForDays(10);
 		assertNotNull(records);
 		assertEquals(4, records.size());
 
-		Map<String, Object> r1 = records.get(0);
+		final Map<String, Object> r1 = records.get(0);
 		assertEquals(48, r1.get("online_receivers"));
 		assertEquals(55, r1.get("unique_aircraft_ids"));
 	}
@@ -100,7 +100,7 @@ public class StatsDaoTest {
 	@Test
 	@DirtiesContext
 	public void testMaxRange1() throws Exception {
-		long timestamp = datetime.toInstant(ZoneOffset.UTC).toEpochMilli();
+		final long timestamp = datetime.toInstant(ZoneOffset.UTC).toEpochMilli();
 
 		dao.upsertMaxRange(timestamp, 58.23f, "TestRec1", "OGN123456", null, 500);
 		dao.upsertMaxRange(timestamp + 100, 120.54f, "TestRec2", "OGN123457", null, 520);
@@ -108,11 +108,11 @@ public class StatsDaoTest {
 		dao.upsertMaxRange(timestamp + 300, 13.65f, "TestRec4", "OGN123459", null, 332);
 		dao.upsertMaxRange(timestamp + 400, 45.4f, "TestRec5", "OGN123460", null, 1230);
 
-		List<Map<String, Object>> records = dao.getTopMaxRanges(4);
+		final List<Map<String, Object>> records = dao.getTopMaxRanges(4);
 		assertNotNull(records);
 		assertEquals(4, records.size());
 
-		Map<String, Object> r1 = records.get(0);
+		final Map<String, Object> r1 = records.get(0);
 
 		assertEquals(192.0f, r1.get("range"));
 	}
@@ -120,7 +120,7 @@ public class StatsDaoTest {
 	@Test
 	@DirtiesContext
 	public void testMaxRange2() throws Exception {
-		long timestamp = datetime.toInstant(ZoneOffset.UTC).toEpochMilli();
+		final long timestamp = datetime.toInstant(ZoneOffset.UTC).toEpochMilli();
 
 		dao.upsertMaxRange(timestamp, 58.23f, "TestRec1", "OGN123456", null, 500);
 		dao.upsertMaxRange(timestamp + 100, 120.54f, "TestRec2", "OGN123457", null, 520);
@@ -132,7 +132,7 @@ public class StatsDaoTest {
 
 		assertNotNull(records);
 		assertEquals(4, records.size());
-		Map<String, Object> r1 = records.get(0);
+		final Map<String, Object> r1 = records.get(0);
 		assertEquals(192.0f, r1.get("range"));
 
 		// go back 25h
@@ -144,9 +144,9 @@ public class StatsDaoTest {
 	@Test
 	@DirtiesContext
 	public void testBeaconsReceptionCounter1() throws Exception {
-		long timestamp = datetime.toInstant(ZoneOffset.UTC).toEpochMilli();
+		final long timestamp = datetime.toInstant(ZoneOffset.UTC).toEpochMilli();
 
-		long date = TimeDateUtils.removeTime(timestamp);
+		final long date = TimeDateUtils.removeTime(timestamp);
 
 		assertEquals(-1, dao.getReceptionCounter(date, "TestRec1"));
 		dao.upsertReceptionCounter(date, "TestRec1", 0);
@@ -191,9 +191,9 @@ public class StatsDaoTest {
 	@Test
 	@DirtiesContext
 	public void testMaxAlt1() throws Exception {
-		long timestamp = datetime.toInstant(ZoneOffset.UTC).toEpochMilli();
+		final long timestamp = datetime.toInstant(ZoneOffset.UTC).toEpochMilli();
 
-		long date = TimeDateUtils.removeTime(timestamp);
+		final long date = TimeDateUtils.removeTime(timestamp);
 
 		// assertFalse(dao.isReceiverRegistered(date, "TestRec1"));
 
@@ -213,12 +213,12 @@ public class StatsDaoTest {
 		assertEquals(2538f, dao.getMaxAlt(date, "TestRec1"), 1e-10);
 		assertEquals(4520.0f, dao.getMaxAlt(date, "TestRec2"), 1e-10);
 
-		List<Map<String, Object>> topAlts = dao.getMaxAlts(date, 1);
+		final List<Map<String, Object>> topAlts = dao.getMaxAlts(date, 1);
 		assertEquals(1, topAlts.size());
 		assertEquals("TestRec2", topAlts.get(0).get("receiver_name"));
-		assertEquals(4520f, topAlts.get(0).get("max_alt"));
-		assertEquals("A-BCD", topAlts.get(0).get("max_alt_aircraft_reg"));
-		assertEquals(timestamp + 130, (long) topAlts.get(0).get("max_alt_timestamp"));
+		assertEquals(4520f, topAlts.get(0).get("alt"));
+		assertEquals("A-BCD", topAlts.get(0).get("aircraft_reg"));
+		assertEquals(timestamp + 130, (long) topAlts.get(0).get("timestamp"));
 	}
 
 }

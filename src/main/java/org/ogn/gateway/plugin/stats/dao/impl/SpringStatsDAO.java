@@ -11,6 +11,7 @@ import java.util.Map;
 import javax.sql.DataSource;
 
 import org.ogn.gateway.plugin.stats.dao.StatsDAO;
+import org.ogn.gateway.plugin.stats.dao.StatsRecordField;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -30,7 +31,7 @@ public class SpringStatsDAO implements StatsDAO {
 	@Override
 	public void upsertMaxRange(long timestamp, float distance, String receiverName, String aircraftId,
 			String aircraftReg, float aircraftAlt) {
-		long date = removeTime(timestamp);
+		final long date = removeTime(timestamp);
 		final StringBuilder sql = new StringBuilder(
 				"insert or replace into OGN_MAX_RANGE(date, receiver_name, range, timestamp, aircraft_id, aircraft_reg, alt) ");
 		sql.append("values(?,?,?,?,?,?,?)");
@@ -42,19 +43,19 @@ public class SpringStatsDAO implements StatsDAO {
 	@Override
 	public Map<String, Object> getMaxRange(final long date, final String receiverName) {
 
-		String sql = "select * from OGN_MAX_RANGE where date=? and receiver_name=?";
+		final String sql = "select * from OGN_MAX_RANGE where date=? and receiver_name=?";
 
-		RowMapper<Map<String, Object>> mapper = new RowMapper<Map<String, Object>>() {
+		final RowMapper<Map<String, Object>> mapper = new RowMapper<Map<String, Object>>() {
 
 			@Override
 			public Map<String, Object> mapRow(ResultSet rs, int arg1) throws SQLException {
 
-				Map<String, Object> rec = new HashMap<>();
-				rec.put("timestamp", rs.getLong("timestamp"));
-				rec.put("range", rs.getFloat("range"));
-				rec.put("aircraft_id", rs.getString("aircraft_id"));
-				rec.put("aircraft_reg", rs.getString("aircraft_reg"));
-				rec.put("alt", rs.getFloat("alt"));
+				final Map<String, Object> rec = new HashMap<>();
+				rec.put(StatsRecordField.TIMESTAMP.getValue(), rs.getLong("timestamp"));
+				rec.put(StatsRecordField.RANGE.getValue(), rs.getFloat("range"));
+				rec.put(StatsRecordField.AIRCRAFT_ID.getValue(), rs.getString("aircraft_id"));
+				rec.put(StatsRecordField.AIRCRAFT_REG.getValue(), rs.getString("aircraft_reg"));
+				rec.put(StatsRecordField.ALT.getValue(), rs.getFloat("alt"));
 				return rec;
 			}
 		};
@@ -63,7 +64,7 @@ public class SpringStatsDAO implements StatsDAO {
 
 		try {
 			result = jdbcTemplate.queryForObject(sql, mapper, new Object[]{date, receiverName});
-		} catch (EmptyResultDataAccessException ex) {
+		} catch (final EmptyResultDataAccessException ex) {
 			result = null;
 		}
 
@@ -77,7 +78,7 @@ public class SpringStatsDAO implements StatsDAO {
 		Integer result = -1;
 		try {
 			result = jdbcTemplate.queryForObject(sql, Integer.class, date);
-		} catch (EmptyResultDataAccessException ex) {
+		} catch (final EmptyResultDataAccessException ex) {
 			// still null ;-)
 			result = -1;
 		}
@@ -89,7 +90,7 @@ public class SpringStatsDAO implements StatsDAO {
 	public List<Map<String, Object>> getTopMaxRanges(int limit) {
 
 		Object[] args = null;
-		StringBuilder sql = new StringBuilder(
+		final StringBuilder sql = new StringBuilder(
 				"select date, receiver_name, max(range) as range, timestamp, aircraft_id, aircraft_reg, alt "
 						+ "from OGN_MAX_RANGE_V group by receiver_name order by range desc");
 
@@ -100,18 +101,18 @@ public class SpringStatsDAO implements StatsDAO {
 			args = new Object[]{limit};
 		}
 
-		RowMapper<Map<String, Object>> mapper = new RowMapper<Map<String, Object>>() {
+		final RowMapper<Map<String, Object>> mapper = new RowMapper<Map<String, Object>>() {
 
 			@Override
 			public Map<String, Object> mapRow(ResultSet rs, int arg1) throws SQLException {
 
-				Map<String, Object> rec = new HashMap<>();
-				rec.put("timestamp", rs.getLong("timestamp"));
-				rec.put("receiver_name", rs.getString("receiver_name"));
-				rec.put("range", rs.getFloat("range"));
-				rec.put("aircraft_id", rs.getString("aircraft_id"));
-				rec.put("aircraft_reg", rs.getString("aircraft_reg"));
-				rec.put("alt", rs.getInt("alt"));
+				final Map<String, Object> rec = new HashMap<>();
+				rec.put(StatsRecordField.TIMESTAMP.getValue(), rs.getLong("timestamp"));
+				rec.put(StatsRecordField.RECEIVER_NAME.getValue(), rs.getString("receiver_name"));
+				rec.put(StatsRecordField.RANGE.getValue(), rs.getFloat("range"));
+				rec.put(StatsRecordField.AIRCRAFT_ID.getValue(), rs.getString("aircraft_id"));
+				rec.put(StatsRecordField.AIRCRAFT_REG.getValue(), rs.getString("aircraft_reg"));
+				rec.put(StatsRecordField.ALT.getValue(), rs.getInt("alt"));
 				return rec;
 			}
 		};
@@ -123,7 +124,7 @@ public class SpringStatsDAO implements StatsDAO {
 	public List<Map<String, Object>> getTopMaxRanges(long date, int limit) {
 
 		Object[] args = null;
-		StringBuilder sql = new StringBuilder("select * from OGN_MAX_RANGE where date=? order by range desc");
+		final StringBuilder sql = new StringBuilder("select * from OGN_MAX_RANGE where date=? order by range desc");
 
 		if (limit == 0) {
 			args = new Object[]{date};
@@ -132,17 +133,17 @@ public class SpringStatsDAO implements StatsDAO {
 			args = new Object[]{date, limit};
 		}
 
-		RowMapper<Map<String, Object>> mapper = new RowMapper<Map<String, Object>>() {
+		final RowMapper<Map<String, Object>> mapper = new RowMapper<Map<String, Object>>() {
 
 			@Override
 			public Map<String, Object> mapRow(ResultSet rs, int arg1) throws SQLException {
-				Map<String, Object> rec = new HashMap<>();
-				rec.put("timestamp", rs.getLong("timestamp"));
-				rec.put("receiver_name", rs.getString("receiver_name"));
-				rec.put("range", rs.getFloat("range"));
-				rec.put("aircraft_id", rs.getString("aircraft_id"));
-				rec.put("aircraft_reg", rs.getString("aircraft_reg"));
-				rec.put("alt", rs.getInt("alt"));
+				final Map<String, Object> rec = new HashMap<>();
+				rec.put(StatsRecordField.TIMESTAMP.getValue(), rs.getLong("timestamp"));
+				rec.put(StatsRecordField.RECEIVER_NAME.getValue(), rs.getString("receiver_name"));
+				rec.put(StatsRecordField.RANGE.getValue(), rs.getFloat("range"));
+				rec.put(StatsRecordField.AIRCRAFT_ID.getValue(), rs.getString("aircraft_id"));
+				rec.put(StatsRecordField.AIRCRAFT_REG.getValue(), rs.getString("aircraft_reg"));
+				rec.put(StatsRecordField.ALT.getValue(), rs.getInt("alt"));
 				return rec;
 			}
 		};
@@ -154,7 +155,7 @@ public class SpringStatsDAO implements StatsDAO {
 	public List<Map<String, Object>> getDailyStatsForDays(int days) {
 
 		Object[] args = null;
-		StringBuilder sql = new StringBuilder("select * from OGN_DAILY_STATS order by date desc");
+		final StringBuilder sql = new StringBuilder("select * from OGN_DAILY_STATS order by date desc");
 
 		if (days == 0) {
 			args = new Object[0];
@@ -163,15 +164,15 @@ public class SpringStatsDAO implements StatsDAO {
 			args = new Object[]{days};
 		}
 
-		RowMapper<Map<String, Object>> mapper = new RowMapper<Map<String, Object>>() {
+		final RowMapper<Map<String, Object>> mapper = new RowMapper<Map<String, Object>>() {
 
 			@Override
 			public Map<String, Object> mapRow(ResultSet rs, int arg1) throws SQLException {
 
-				Map<String, Object> rec = new HashMap<>();
-				rec.put("online_receivers", rs.getInt("online_receivers"));
-				rec.put("unique_aircraft_ids", rs.getInt("unique_aircraft_ids"));
-				rec.put("date", rs.getLong("date"));
+				final Map<String, Object> rec = new HashMap<>();
+				rec.put(StatsRecordField.ONLINE_RECEIVERS.getValue(), rs.getInt("online_receivers"));
+				rec.put(StatsRecordField.UNIQUE_AIRCRAFT_IDS.getValue(), rs.getInt("unique_aircraft_ids"));
+				rec.put(StatsRecordField.DATE.getValue(), rs.getLong("date"));
 				return rec;
 			}
 		};
@@ -195,7 +196,7 @@ public class SpringStatsDAO implements StatsDAO {
 		Integer result = -1;
 		try {
 			result = jdbcTemplate.queryForObject(sql, Integer.class, date, receiverName);
-		} catch (EmptyResultDataAccessException ex) {
+		} catch (final EmptyResultDataAccessException ex) {
 			// still null ;-)
 			result = -1;
 		}
@@ -207,7 +208,7 @@ public class SpringStatsDAO implements StatsDAO {
 	public List<Map<String, Object>> getTopReceptionCounters(int limit) {
 
 		Object[] args = null;
-		StringBuilder sql = new StringBuilder("select * from OGN_RECEIVER_V order by beacons_received desc");
+		final StringBuilder sql = new StringBuilder("select * from OGN_RECEIVER_V order by beacons_received desc");
 		if (limit == 0) {
 			args = new Object[0];
 		} else {
@@ -215,14 +216,14 @@ public class SpringStatsDAO implements StatsDAO {
 			args = new Object[]{limit};
 		}
 
-		RowMapper<Map<String, Object>> mapper = new RowMapper<Map<String, Object>>() {
+		final RowMapper<Map<String, Object>> mapper = new RowMapper<Map<String, Object>>() {
 
 			@Override
 			public Map<String, Object> mapRow(ResultSet rs, int arg1) throws SQLException {
 
-				Map<String, Object> rec = new HashMap<>();
-				rec.put("receiver_name", rs.getString("receiver_name"));
-				rec.put("count", rs.getInt("beacons_received"));
+				final Map<String, Object> rec = new HashMap<>();
+				rec.put(StatsRecordField.RECEIVER_NAME.getValue(), rs.getString("receiver_name"));
+				rec.put(StatsRecordField.COUNT.getValue(), rs.getInt("beacons_received"));
 				return rec;
 			}
 		};
@@ -234,7 +235,8 @@ public class SpringStatsDAO implements StatsDAO {
 	public List<Map<String, Object>> getTopReceptionCounters(long date, int limit) {
 
 		Object[] args = null;
-		StringBuilder sql = new StringBuilder("select * from OGN_RECEIVER where date=? order by beacons_received desc");
+		final StringBuilder sql =
+				new StringBuilder("select * from OGN_RECEIVER where date=? order by beacons_received desc");
 
 		if (limit == 0) {
 			args = new Object[]{date};
@@ -243,14 +245,14 @@ public class SpringStatsDAO implements StatsDAO {
 			args = new Object[]{date, limit};
 		}
 
-		RowMapper<Map<String, Object>> mapper = new RowMapper<Map<String, Object>>() {
+		final RowMapper<Map<String, Object>> mapper = new RowMapper<Map<String, Object>>() {
 
 			@Override
 			public Map<String, Object> mapRow(ResultSet rs, int arg1) throws SQLException {
 
-				Map<String, Object> rec = new HashMap<>();
-				rec.put("receiver_name", rs.getString("receiver_name"));
-				rec.put("count", rs.getInt("beacons_received"));
+				final Map<String, Object> rec = new HashMap<>();
+				rec.put(StatsRecordField.RECEIVER_NAME.getValue(), rs.getString("receiver_name"));
+				rec.put(StatsRecordField.COUNT.getValue(), rs.getInt("beacons_received"));
 				return rec;
 			}
 		};
@@ -265,7 +267,7 @@ public class SpringStatsDAO implements StatsDAO {
 		Float result = null;
 		try {
 			result = jdbcTemplate.queryForObject(sql, Float.class, date, receiverName);
-		} catch (EmptyResultDataAccessException ex) {
+		} catch (final EmptyResultDataAccessException ex) {
 			// nothing to be done here
 		}
 
@@ -275,7 +277,7 @@ public class SpringStatsDAO implements StatsDAO {
 	@Override
 	public List<Map<String, Object>> getMaxAlts(long date, int limit) {
 		Object[] args = null;
-		StringBuilder sql = new StringBuilder(
+		final StringBuilder sql = new StringBuilder(
 				"select receiver_name,max_alt, max_alt_aircraft_id, max_alt_aircraft_reg, max_alt_timestamp");
 		sql.append(" from OGN_RECEIVER").append(" where date=? and max_alt is not null order by max_alt desc");
 
@@ -286,18 +288,17 @@ public class SpringStatsDAO implements StatsDAO {
 			args = new Object[]{date, limit};
 		}
 
-		RowMapper<Map<String, Object>> mapper = new RowMapper<Map<String, Object>>() {
+		final RowMapper<Map<String, Object>> mapper = new RowMapper<Map<String, Object>>() {
 
 			@Override
 			public Map<String, Object> mapRow(ResultSet rs, int arg1) throws SQLException {
 
-				Map<String, Object> rec = new HashMap<>();
-				rec.put("receiver_name", rs.getString("receiver_name"));
-				rec.put("max_alt", rs.getFloat("max_alt"));
-				rec.put("max_alt_aircraft_id", rs.getString("max_alt_aircraft_id"));
-				rec.put("max_alt_aircraft_reg", rs.getString("max_alt_aircraft_reg"));
-
-				rec.put("max_alt_timestamp", rs.getLong("max_alt_timestamp"));
+				final Map<String, Object> rec = new HashMap<>();
+				rec.put(StatsRecordField.RECEIVER_NAME.getValue(), rs.getString("receiver_name"));
+				rec.put(StatsRecordField.ALT.getValue(), rs.getFloat("max_alt"));
+				rec.put(StatsRecordField.AIRCRAFT_ID.getValue(), rs.getString("max_alt_aircraft_id"));
+				rec.put(StatsRecordField.AIRCRAFT_REG.getValue(), rs.getString("max_alt_aircraft_reg"));
+				rec.put(StatsRecordField.TIMESTAMP.getValue(), rs.getLong("max_alt_timestamp"));
 
 				return rec;
 
@@ -311,12 +312,12 @@ public class SpringStatsDAO implements StatsDAO {
 	public void upsertMaxAlt(long timestamp, String receiverName, String aircraftId, String aircraftReg,
 			float aircraftAlt) {
 
-		String sql = "insert or ignore into OGN_RECEIVER(date,receiver_name) values(?,?)";
+		final String sql = "insert or ignore into OGN_RECEIVER(date,receiver_name) values(?,?)";
 
-		long date = removeTime(timestamp);
+		final long date = removeTime(timestamp);
 		jdbcTemplate.update(sql.toString(), date, receiverName);
 
-		StringBuilder sql2 = new StringBuilder(
+		final StringBuilder sql2 = new StringBuilder(
 				"update OGN_RECEIVER set max_alt=?, max_alt_aircraft_id=?, max_alt_aircraft_reg=?, max_alt_timestamp=? ")
 						.append("where date=? and receiver_name=?");
 
@@ -338,7 +339,7 @@ public class SpringStatsDAO implements StatsDAO {
 		Integer result = -1;
 		try {
 			result = jdbcTemplate.queryForObject(sql, Integer.class, date);
-		} catch (EmptyResultDataAccessException ex) {
+		} catch (final EmptyResultDataAccessException ex) {
 			// still null ;-)
 			result = -1;
 		}
